@@ -1,0 +1,29 @@
+name: Publish
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # OIDC trusted publishing to npm
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      # Trusted publishing via OIDC — no NODE_AUTH_TOKEN needed once the package
+      # is linked to this workflow on npmjs.com. Requires npm >= 11.5.1.
+      - run: npm install -g npm@latest
+      - run: npm publish --provenance --access public

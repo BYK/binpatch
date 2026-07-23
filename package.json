@@ -1,0 +1,59 @@
+{
+  "name": "binpatch",
+  "version": "0.1.0",
+  "type": "module",
+  "license": "MIT",
+  "description": "Reusable binary delta-update engine: apply TRDIFF10/bsdiff+zstd patch chains to a binary and discover chains from a pluggable source (OCI/GHCR or GitHub Releases). Pure Node, zero product coupling.",
+  "author": "BYK",
+  "homepage": "https://github.com/BYK/binpatch#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BYK/binpatch.git"
+  },
+  "bugs": {
+    "url": "https://github.com/BYK/binpatch/issues"
+  },
+  "keywords": [
+    "bsdiff",
+    "bspatch",
+    "trdiff10",
+    "zstd",
+    "binary",
+    "delta",
+    "patch",
+    "update",
+    "self-update",
+    "oci",
+    "ghcr"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=22.5"
+  },
+  "scripts": {
+    "build": "tsup",
+    "clean": "rm -rf dist",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.1",
+    "tsup": "^8.5.0",
+    "typescript": "^5.7.3",
+    "vitest": "^4.1.7"
+  }
+}
