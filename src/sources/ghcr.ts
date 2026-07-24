@@ -61,7 +61,7 @@ export function filterAndSortChainTags(
   return chainTags.map((t) => t.tag);
 }
 
-type StepFailureReason = "malformed" | "over_budget";
+export type StepFailureReason = "malformed" | "over_budget";
 
 type ChainStepResult =
   | { ok: true; digest: string; size: number }
@@ -95,7 +95,7 @@ type NightlyChainValidation = {
 };
 
 /** A validation failure, classified for telemetry. */
-type NightlyChainFailure = { failure: "malformed_chain" | "over_budget" };
+export type NightlyChainFailure = { failure: "malformed_chain" | "over_budget" };
 
 function isChainFailure(
   v: NightlyChainValidation | NightlyChainFailure,
