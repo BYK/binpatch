@@ -71,6 +71,8 @@ export {
   getPatchFromVersion,
   getPatchTargetSha256,
   filterAndSortChainTags,
+  type NightlyChainFailure,
+  type StepFailureReason,
   validateChainStep,
 } from "./sources/ghcr";
 
@@ -83,6 +85,7 @@ export {
   type GitHubReleaseSourceConfig,
   githubReleaseSource,
   getStableTargetSha256,
+  type StableChainFailure,
   type StableChainInfo,
 } from "./sources/github-release";
 
