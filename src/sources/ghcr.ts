@@ -220,12 +220,19 @@ export function ghcrSource(config: GhcrSourceConfig): SourceStrategy {
 
     // Fetch manifests for all chain tags in parallel.
     const fetchedManifests = new Map<string, OciManifest>();
+    let fetchFailed = false;
     const results = await Promise.all(
       chainTags.map(async (tag) => {
         try {
           const manifest = await client.fetchManifest(token, tag, signal);
           return { tag, manifest };
         } catch {
+          // A manifest that's listed as a tag but fails to fetch is almost
+          // always transient (5xx / timeout / connection reset), NOT a poison:
+          // a poisoned tag's manifest fetches fine (HTTP 200) and is caught by
+          // validateNightlyChain instead. Classify a fetch failure as network
+          // so it never triggers a false `malformed_chain` poison alert.
+          fetchFailed = true;
           return { tag, manifest: null };
         }
       }),
@@ -235,10 +242,8 @@ export function ghcrSource(config: GhcrSourceConfig): SourceStrategy {
     }
 
     const manifests = chainTags.map((tag) => fetchedManifests.get(tag));
-    // A patch tag exists in the range but its manifest could not be fetched.
-    // The tag is published (it's in the range) but unusable → malformed chain.
     if (manifests.some((m) => !m)) {
-      report?.("malformed_chain");
+      report?.(fetchFailed ? "network" : "malformed_chain");
       return null;
     }
 

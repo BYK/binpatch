@@ -20,7 +20,7 @@ import {
   type PatchLink,
   SIZE_THRESHOLD_RATIO,
 } from "../contract";
-import type { SourceStrategy, UnavailableReporter } from "../discover";
+import type { SourceStrategy } from "../discover";
 
 const SHA256_DIGEST_PATTERN = /^sha256:([0-9a-f]+)$/i;
 

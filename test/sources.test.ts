@@ -363,6 +363,48 @@ describe("ghcrSource resolveChain — SourceStrategy contract on network failure
     ).resolves.toBeNull();
     expect(report).toHaveBeenCalledExactlyOnceWith("malformed_chain");
   });
+
+  it("reports 'network' (not 'malformed_chain') when a chain manifest fetch fails transiently", async () => {
+    // A patch tag is in range, but fetching its manifest fails (5xx / reset /
+    // timeout). This is transient, NOT a poisoned publish — it must report
+    // `network`, never a false `malformed_chain` poison alert. (A real poison
+    // fetches HTTP 200 and is caught by validateNightlyChain instead.)
+    const token = { token: "t" };
+    const gzLayer = {
+      digest: "sha256:gz",
+      mediaType: "application/gzip",
+      size: 1000,
+      annotations: { "org.opencontainers.image.title": `${BINARY}.gz` },
+    };
+    const targetManifest = { schemaVersion: 2, layers: [gzLayer] };
+
+    globalThis.fetch = vi.fn(async (url: unknown) => {
+      const u = String(url);
+      if (u.includes("/token")) return json(token);
+      if (u.includes("/tags/list")) return json({ tags: ["patch-1.1.0"] });
+      if (u.includes("/manifests/nightly-1.1.0")) return json(targetManifest);
+      // The in-range patch manifest 5xxs on every (retried) attempt.
+      if (u.includes("/manifests/patch-1.1.0")) {
+        return new Response("upstream boom", { status: 503 });
+      }
+      throw new TypeError(`unexpected fetch: ${u}`);
+    });
+
+    const source = ghcrSource({
+      registry: "https://ghcr.io",
+      repo: "owner/project",
+      userAgent: "test/1.0.0",
+      binaryName: BINARY,
+      targetTag: (v) => `nightly-${v}`,
+      compareVersions: cmp,
+    });
+
+    const report = vi.fn();
+    await expect(
+      source.resolveChain("1.0.0", "1.1.0", undefined, report),
+    ).resolves.toBeNull();
+    expect(report).toHaveBeenCalledExactlyOnceWith("network");
+  });
 });
 
 describe("OciClient.downloadBlob — redirect always carries a timeout signal", () => {
