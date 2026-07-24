@@ -507,6 +507,45 @@ describe("OciClient — injectable fetch (custom-CA / proxy support)", () => {
     expect(calls.some((u) => u.includes("/blobs/"))).toBe(true);
   });
 
+  it("routes the manual blob redirect through the injected fetch too", async () => {
+    // The blob download can 307-redirect to external storage (e.g. Azure);
+    // that redirect fetch must ALSO go through the injected fetch, or a
+    // custom-CA / proxy consumer loses interception on the actual bytes.
+    globalThis.fetch = vi.fn(async () => {
+      throw new Error("global fetch must not be used — redirect leaked");
+    });
+
+    const seen: string[] = [];
+    const injected = vi.fn(async (url: unknown) => {
+      const u = String(url);
+      seen.push(u);
+      if (u.includes("/blobs/")) {
+        return new Response(null, {
+          status: 307,
+          headers: { location: "https://blob.example.com/obj" },
+        });
+      }
+      if (u === "https://blob.example.com/obj") {
+        return new Response(new Uint8Array([4, 5, 6]), { status: 200 });
+      }
+      return new Response(null, { status: 404 });
+    });
+
+    const client = new OciClient({
+      registry: "https://ghcr.io",
+      repo: "owner/project",
+      userAgent: "test/1.0.0",
+      fetch: injected as unknown as typeof fetch,
+    });
+
+    const res = await client.downloadBlob("tok", "sha256:abc");
+    expect(res.status).toBe(200);
+    // Both the initial blob request AND the redirect target went through the
+    // injected fetch; the global was never touched.
+    expect(seen).toContain("https://blob.example.com/obj");
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+
   it("defaults to the global fetch when none is injected", async () => {
     const globalMock = vi.fn(async () =>
       new Response(JSON.stringify({ token: "global-tok" }), { status: 200 }),
