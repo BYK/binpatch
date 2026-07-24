@@ -56,6 +56,12 @@ export type OciClientConfig = {
   repo: string;
   /** User-Agent header sent on every request. */
   userAgent: string;
+  /**
+   * Injectable fetch (defaults to global `fetch`). Supply a custom
+   * implementation to route registry traffic through a proxy or a
+   * custom-CA-aware agent (e.g. honoring `NODE_EXTRA_CA_CERTS`).
+   */
+  fetch?: typeof fetch;
 };
 
 function isRetryableError(error: Error): boolean {
@@ -94,11 +100,13 @@ export class OciClient {
   private readonly registry: string;
   private readonly repo: string;
   private readonly userAgent: string;
+  private readonly fetch: typeof fetch;
 
   constructor(config: OciClientConfig) {
     this.registry = config.registry;
     this.repo = config.repo;
     this.userAgent = config.userAgent;
+    this.fetch = config.fetch ?? fetch;
   }
 
   private async fetchWithRetry(
@@ -113,7 +121,7 @@ export class OciClient {
 
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       try {
-        return await fetch(url, {
+        return await this.fetch(url, {
           ...init,
           signal: buildSignal(timeout, externalSignal),
         });
@@ -258,7 +266,7 @@ export class OciClient {
 
     let blobResponse: Response;
     try {
-      blobResponse = await fetch(blobUrl, {
+      blobResponse = await this.fetch(blobUrl, {
         headers: {
           Authorization: `Bearer ${token}`,
           "User-Agent": this.userAgent,
@@ -292,7 +300,7 @@ export class OciClient {
 
       let redirectResponse: Response;
       try {
-        redirectResponse = await fetch(redirectUrl, {
+        redirectResponse = await this.fetch(redirectUrl, {
           headers: { "User-Agent": this.userAgent },
           // Apply the same blob timeout to the redirected (e.g. Azure Blob
           // Storage) download. Passing the raw `signal` alone means no timeout

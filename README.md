@@ -90,6 +90,12 @@ const stable = githubReleaseSource({
   userAgent: "my-cli/1.2.3",
 });
 
+// Both sources accept an optional `fetch` to route registry/API traffic
+// through a proxy or a custom-CA-aware agent (e.g. honoring
+// NODE_EXTRA_CA_CERTS). Defaults to the global `fetch` when omitted:
+//   ghcrSource({ ..., fetch: myCustomFetch })
+//   githubReleaseSource({ ..., fetch: myCustomFetch })
+
 const result = await resolveAndApply({
   source: nightly,            // or stable
   currentVersion, targetVersion,

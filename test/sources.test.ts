@@ -451,3 +451,76 @@ describe("OciClient.downloadBlob — redirect always carries a timeout signal", 
     expect(redirectSignal?.aborted).toBe(false);
   });
 });
+
+describe("OciClient — injectable fetch (custom-CA / proxy support)", () => {
+  const realFetch = globalThis.fetch;
+  afterEach(() => {
+    globalThis.fetch = realFetch;
+  });
+
+  it("routes every request through the injected fetch, never the global", async () => {
+    // The global fetch must NEVER be called: if the client reached past its
+    // injected fetch to the global, a custom-CA / corporate-proxy consumer
+    // would silently lose TLS interception. Blow up if the global is touched.
+    globalThis.fetch = vi.fn(async () => {
+      throw new Error("global fetch must not be used — injection leaked");
+    });
+
+    const calls: string[] = [];
+    const injected = vi.fn(async (url: unknown, _init?: unknown) => {
+      const u = String(url);
+      calls.push(u);
+      if (u.includes("/token")) {
+        return new Response(JSON.stringify({ token: "injected-tok" }), {
+          status: 200,
+        });
+      }
+      if (u.includes("/manifests/")) {
+        return new Response(
+          JSON.stringify({ schemaVersion: 2, layers: [] }),
+          { status: 200 },
+        );
+      }
+      if (u.includes("/blobs/")) {
+        return new Response(new Uint8Array([9, 9, 9]), { status: 200 });
+      }
+      return new Response(null, { status: 404 });
+    });
+
+    const client = new OciClient({
+      registry: "https://ghcr.io",
+      repo: "owner/project",
+      userAgent: "test/1.0.0",
+      fetch: injected as unknown as typeof fetch,
+    });
+
+    const token = await client.getAnonymousToken();
+    expect(token).toBe("injected-tok");
+    await client.fetchManifest(token, "nightly");
+    await client.downloadBlob(token, "sha256:abc");
+
+    // Injected fetch handled all three protocol calls; global untouched.
+    expect(injected).toHaveBeenCalledTimes(3);
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+    expect(calls.some((u) => u.includes("/token"))).toBe(true);
+    expect(calls.some((u) => u.includes("/manifests/"))).toBe(true);
+    expect(calls.some((u) => u.includes("/blobs/"))).toBe(true);
+  });
+
+  it("defaults to the global fetch when none is injected", async () => {
+    const globalMock = vi.fn(async () =>
+      new Response(JSON.stringify({ token: "global-tok" }), { status: 200 }),
+    );
+    globalThis.fetch = globalMock as unknown as typeof fetch;
+
+    const client = new OciClient({
+      registry: "https://ghcr.io",
+      repo: "owner/project",
+      userAgent: "test/1.0.0",
+    });
+
+    const token = await client.getAnonymousToken();
+    expect(token).toBe("global-tok");
+    expect(globalMock).toHaveBeenCalledTimes(1);
+  });
+});
