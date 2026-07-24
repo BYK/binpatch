@@ -100,13 +100,20 @@ const result = await resolveAndApply({
   telemetry: {                 // optional — the library is telemetry-agnostic
     onResolved: ({ source }) => {/* "cache" | "network" */},
     onOfflineMiss: () => {},
+    // Why no chain was usable (full-download fallback). Alert on
+    // "malformed_chain" — it means a published-but-broken patch (a poisoned
+    // publish), not a benign "no_patches".
+    onUnavailable: (reason) => {/* "no_patches" | "malformed_chain" | "too_long" | "over_budget" | "network" */},
   },
 });
 // result: { sha256, patchBytes, chainLength } | null (fall back to full download)
 ```
 
 Implement your own `SourceStrategy` for any other layout — the contract is a
-single method: `resolveChain(current, target, signal?) => PatchChain | null`.
+single method:
+`resolveChain(current, target, signal?, report?) => PatchChain | null`. Call the
+optional `report(reason)` to classify a `null` result for telemetry (it never
+changes control flow).
 
 ### Progress is events, never rendering
 

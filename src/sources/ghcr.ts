@@ -21,7 +21,7 @@ import {
   type PatchLink,
   SIZE_THRESHOLD_RATIO,
 } from "../contract";
-import type { SourceStrategy } from "../discover";
+import type { SourceStrategy, UnavailableReporter } from "../discover";
 import { BinpatchError } from "../errors";
 import { OciClient, type OciClientConfig, type OciManifest } from "./oci";
 
@@ -61,9 +61,11 @@ export function filterAndSortChainTags(
   return chainTags.map((t) => t.tag);
 }
 
+type StepFailureReason = "malformed" | "over_budget";
+
 type ChainStepResult =
   | { ok: true; digest: string; size: number }
-  | { ok: false };
+  | { ok: false; reason: StepFailureReason };
 
 export function validateChainStep(
   manifest: OciManifest,
@@ -71,15 +73,17 @@ export function validateChainStep(
 ): ChainStepResult {
   const fromVersion = getPatchFromVersion(manifest);
   if (fromVersion !== opts.expectedFrom) {
-    return { ok: false };
+    return { ok: false, reason: "malformed" };
   }
 
   const layer = manifest.layers.find(
     (l) =>
       l.annotations?.["org.opencontainers.image.title"] === opts.patchLayerName,
   );
-  if (!layer) return { ok: false };
-  if (layer.size > opts.sizeLimit) return { ok: false };
+  // A missing patch layer for this platform is the poisoned-publish signature:
+  // the manifest exists and links correctly, but carries no usable patch.
+  if (!layer) return { ok: false, reason: "malformed" };
+  if (layer.size > opts.sizeLimit) return { ok: false, reason: "over_budget" };
 
   return { ok: true, digest: layer.digest, size: layer.size };
 }
@@ -89,6 +93,15 @@ type NightlyChainValidation = {
   totalSize: number;
   expectedSha256: string;
 };
+
+/** A validation failure, classified for telemetry. */
+type NightlyChainFailure = { failure: "malformed_chain" | "over_budget" };
+
+function isChainFailure(
+  v: NightlyChainValidation | NightlyChainFailure,
+): v is NightlyChainFailure {
+  return "failure" in v;
+}
 
 type ValidateChainOpts = {
   manifests: OciManifest[];
@@ -102,7 +115,7 @@ type ValidateChainOpts = {
 
 function validateNightlyChain(
   opts: ValidateChainOpts,
-): NightlyChainValidation | null {
+): NightlyChainValidation | NightlyChainFailure {
   const {
     manifests,
     chainTags,
@@ -119,7 +132,7 @@ function validateNightlyChain(
   for (let i = 0; i < manifests.length; i++) {
     const manifest = manifests[i];
     const tag = chainTags[i];
-    if (!(manifest && tag)) return null;
+    if (!(manifest && tag)) return { failure: "malformed_chain" };
 
     const remainingBudget = fullGzSize * SIZE_THRESHOLD_RATIO - totalSize;
     const result = validateChainStep(manifest, {
@@ -127,21 +140,26 @@ function validateNightlyChain(
       patchLayerName,
       sizeLimit: remainingBudget,
     });
-    if (!result.ok) return null;
+    if (!result.ok) {
+      return {
+        failure:
+          result.reason === "over_budget" ? "over_budget" : "malformed_chain",
+      };
+    }
 
     digests.push(result.digest);
     totalSize += result.size;
     prevVersion = tag.slice(PATCH_TAG_PREFIX.length);
 
     if (i === manifests.length - 1) {
-      if (prevVersion !== targetVersion) return null;
+      if (prevVersion !== targetVersion) return { failure: "malformed_chain" };
       const sha256 = getPatchTargetSha256(manifest, binaryName) ?? "";
-      if (!sha256) return null;
+      if (!sha256) return { failure: "malformed_chain" };
       return { digests, totalSize, expectedSha256: sha256 };
     }
   }
 
-  return null;
+  return { failure: "malformed_chain" };
 }
 
 /** Configuration for {@link ghcrSource}. */
@@ -173,6 +191,7 @@ export function ghcrSource(config: GhcrSourceConfig): SourceStrategy {
     fullGzSize: number;
     preloadedTags: string[];
     signal?: AbortSignal;
+    report?: UnavailableReporter;
   }): Promise<PatchChain | null> {
     const {
       token,
@@ -181,6 +200,7 @@ export function ghcrSource(config: GhcrSourceConfig): SourceStrategy {
       fullGzSize,
       preloadedTags,
       signal,
+      report,
     } = opts;
 
     const chainTags = filterAndSortChainTags(
@@ -189,7 +209,12 @@ export function ghcrSource(config: GhcrSourceConfig): SourceStrategy {
       targetVersion,
       compareVersions,
     );
-    if (chainTags.length === 0 || chainTags.length > MAX_NIGHTLY_CHAIN_DEPTH) {
+    if (chainTags.length === 0) {
+      report?.("no_patches");
+      return null;
+    }
+    if (chainTags.length > MAX_NIGHTLY_CHAIN_DEPTH) {
+      report?.("too_long");
       return null;
     }
 
@@ -210,7 +235,12 @@ export function ghcrSource(config: GhcrSourceConfig): SourceStrategy {
     }
 
     const manifests = chainTags.map((tag) => fetchedManifests.get(tag));
-    if (manifests.some((m) => !m)) return null;
+    // A patch tag exists in the range but its manifest could not be fetched.
+    // The tag is published (it's in the range) but unusable → malformed chain.
+    if (manifests.some((m) => !m)) {
+      report?.("malformed_chain");
+      return null;
+    }
 
     const validation = validateNightlyChain({
       manifests: manifests as OciManifest[],
@@ -221,7 +251,10 @@ export function ghcrSource(config: GhcrSourceConfig): SourceStrategy {
       binaryName,
       fullGzSize,
     });
-    if (!validation) return null;
+    if (isChainFailure(validation)) {
+      report?.(validation.failure);
+      return null;
+    }
 
     const downloadResults = await Promise.all(
       validation.digests.map((digest) =>
@@ -255,7 +288,7 @@ export function ghcrSource(config: GhcrSourceConfig): SourceStrategy {
   }
 
   return {
-    async resolveChain(currentVersion, targetVersion, signal) {
+    async resolveChain(currentVersion, targetVersion, signal, report) {
       // A network failure anywhere in resolution (token exchange, manifest /
       // tag listing, or blob download) means "no usable chain" per the
       // SourceStrategy contract — return null so the caller falls back to a
@@ -275,7 +308,12 @@ export function ghcrSource(config: GhcrSourceConfig): SourceStrategy {
             l.annotations?.["org.opencontainers.image.title"] ===
             `${binaryName}.gz`,
         );
-        if (!gzLayer) return null;
+        // The target's own image manifest is missing this platform's `.gz`
+        // layer — the target publish itself is malformed for this binary.
+        if (!gzLayer) {
+          report?.("malformed_chain");
+          return null;
+        }
 
         return await resolveNightlyChain({
           token,
@@ -284,9 +322,13 @@ export function ghcrSource(config: GhcrSourceConfig): SourceStrategy {
           fullGzSize: gzLayer.size,
           preloadedTags: patchTags,
           signal,
+          report,
         });
       } catch (error) {
-        if (error instanceof BinpatchError) return null;
+        if (error instanceof BinpatchError) {
+          report?.("network");
+          return null;
+        }
         throw error;
       }
     },
