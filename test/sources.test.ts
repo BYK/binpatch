@@ -8,6 +8,7 @@ import {
   getPatchTargetSha256,
   ghcrSource,
   type GitHubRelease,
+  githubReleaseSource,
   getStableTargetSha256,
   OciClient,
   type OciManifest,
@@ -666,5 +667,73 @@ describe("per-HTTP instrument hook (consumer-facing telemetry)", () => {
 
     const token = await client.getAnonymousToken();
     expect(token).toBe("preserved-tok");
+  });
+
+  it("wraps every githubReleaseSource HTTP step in the supplied instrument hook", async () => {
+    // Symmetry coverage for the GitHub-Release channel: the library must
+    // invoke `instrument("fetch-releases", ...)` and
+    // `instrument("download-patch", ...)` around each GitHub API request.
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = vi.fn(async (url: unknown) => {
+      const u = String(url);
+      if (u.includes("/releases?per_page=")) {
+        // Newest-first (as GitHub returns). Each binary asset carries a
+        // `digest` (sha256:hex) so extractStableChain can derive
+        // expectedSha256; each patch asset has a URL for downloadPatch.
+        return json([
+          {
+            tag_name: "1.1.0",
+            assets: [
+              {
+                name: "lore-linux-x64",
+                size: 100,
+                digest: "sha256:1111",
+              },
+              { name: "lore-linux-x64.gz", size: 40 },
+              {
+                name: "lore-linux-x64.patch",
+                size: 5,
+                browser_download_url: "https://example.test/1.1.0/lore-linux-x64.patch",
+              },
+            ],
+          },
+          {
+            tag_name: "1.0.0",
+            assets: [
+              {
+                name: "lore-linux-x64",
+                size: 100,
+                digest: "sha256:0000",
+              },
+              { name: "lore-linux-x64.gz", size: 40 },
+            ],
+          },
+        ]);
+      }
+      if (u.endsWith(".patch")) {
+        return new Response(new Uint8Array([1, 2, 3]), { status: 200 });
+      }
+      throw new TypeError(`unexpected fetch: ${u}`);
+    });
+
+    const seen: string[] = [];
+    const instrument: InstrumentHook = async (name, fn) => {
+      seen.push(name);
+      return await fn();
+    };
+
+    const source = githubReleaseSource({
+      releasesUrl: "https://api.github.com/repos/owner/project/releases",
+      binaryName: "lore-linux-x64",
+      userAgent: "test/1.0.0",
+      instrument,
+    });
+
+    await source.resolveChain("1.0.0", "1.1.0");
+    expect(seen).toEqual(
+      expect.arrayContaining(["fetch-releases", "download-patch"]),
+    );
+
+    globalThis.fetch = realFetch;
   });
 });
