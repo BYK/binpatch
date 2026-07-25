@@ -15,6 +15,7 @@
  */
 
 import {
+  type InstrumentHook,
   MAX_STABLE_CHAIN_DEPTH,
   type PatchChain,
   type PatchLink,
@@ -147,6 +148,13 @@ export type GitHubReleaseSourceConfig = {
   userAgent: string;
   /** Injectable fetch (defaults to global `fetch`). */
   fetch?: typeof fetch;
+  /**
+   * Optional per-HTTP-step instrumentation hook. The library calls
+   * `instrument("step-name", () => fetchCall())` around each GitHub API
+   * request (releases listing, patch downloads). Supply this to add
+   * per-request tracing spans; omit for un-instrumented runs.
+   */
+  instrument?: InstrumentHook;
 };
 
 /**
@@ -157,6 +165,11 @@ export function githubReleaseSource(
 ): SourceStrategy {
   const doFetch = config.fetch ?? fetch;
   const { releasesUrl, binaryName, userAgent } = config;
+  // Wrap an async network call in the consumer's instrumentation hook. If no
+  // hook was supplied, the call runs as-is (no behavioral overhead, no
+  // wrapping).
+  const i = <T>(name: string, fn: () => Promise<T>): Promise<T> =>
+    config.instrument ? config.instrument(name, fn) : fn();
 
   async function fetchRecentReleases(
     signal?: AbortSignal,
@@ -164,13 +177,15 @@ export function githubReleaseSource(
     const perPage = MAX_STABLE_CHAIN_DEPTH + 2;
     let response: Response;
     try {
-      response = await doFetch(`${releasesUrl}?per_page=${perPage}`, {
-        headers: {
-          Accept: "application/vnd.github.v3+json",
-          "User-Agent": userAgent,
-        },
-        signal,
-      });
+      response = await i("fetch-releases", () =>
+        doFetch(`${releasesUrl}?per_page=${perPage}`, {
+          headers: {
+            Accept: "application/vnd.github.v3+json",
+            "User-Agent": userAgent,
+          },
+          signal,
+        }),
+      );
     } catch {
       // Network failure — distinct from a genuinely empty release list.
       return null;
@@ -185,10 +200,12 @@ export function githubReleaseSource(
   ): Promise<Uint8Array | null> {
     let response: Response;
     try {
-      response = await doFetch(url, {
-        headers: { "User-Agent": userAgent },
-        signal,
-      });
+      response = await i("download-patch", () =>
+        doFetch(url, {
+          headers: { "User-Agent": userAgent },
+          signal,
+        }),
+      );
     } catch {
       return null;
     }

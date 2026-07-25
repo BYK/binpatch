@@ -51,3 +51,23 @@ export type DeltaResult = {
   patchBytes: number;
   chainLength: number;
 };
+
+/**
+ * Per-HTTP-step instrumentation hook supplied by the consumer.
+ *
+ * The library calls this around every network operation it performs on the
+ * consumer's behalf. A typical consumer wraps each step in a tracing span:
+ *
+ * ```ts
+ * const instrument: InstrumentHook = async (name, fn) =>
+ *   withTracing(name, "http.client", () => fn());
+ *
+ * resolveAndApply({ source: ghcrSource({ ..., instrument }), ... });
+ * ```
+ *
+ * Omit the hook for un-instrumented runs. The hook MUST be transparent — the
+ * returned promise must resolve/reject with the same value as `fn()`. Throwing
+ * inside the hook is allowed but will abort the current operation, just like
+ * `fn` throwing.
+ */
+export type InstrumentHook = <T>(name: string, fn: () => Promise<T>) => Promise<T>;

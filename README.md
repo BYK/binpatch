@@ -96,6 +96,16 @@ const stable = githubReleaseSource({
 //   ghcrSource({ ..., fetch: myCustomFetch })
 //   githubReleaseSource({ ..., fetch: myCustomFetch })
 
+// Both sources also accept an optional `instrument` hook to wrap every HTTP
+// step in your tracing/observability primitives. The library calls
+// `instrument("step-name", () => fetchCall())` around each network operation
+// and the consumer returns the same value. Omit for un-instrumented runs:
+//   ghcrSource({ ..., instrument: withTracing("http.client") })
+//   githubReleaseSource({ ..., instrument: withTracing("http.client") })
+//   Named steps: ghcr-token, fetch-target-manifest, list-patch-tags,
+//                fetch-chain-manifest, download-patch,
+//                fetch-releases, download-patch (stable).
+
 const result = await resolveAndApply({
   source: nightly,            // or stable
   currentVersion, targetVersion,

@@ -15,6 +15,7 @@
  */
 
 import {
+  type InstrumentHook,
   MAX_NIGHTLY_CHAIN_DEPTH,
   PATCH_TAG_PREFIX,
   type PatchChain,
@@ -174,6 +175,13 @@ export type GhcrSourceConfig = OciClientConfig & {
   targetTag: (version: string) => string;
   /** Version comparator (semver-aware), for ordering patch tags. */
   compareVersions: (a: string, b: string) => -1 | 0 | 1;
+  /**
+   * Optional per-HTTP-step instrumentation hook. The library calls
+   * `instrument("step-name", () => fetchCall())` around each OCI request
+   * (token exchange, manifest fetch, tag list, blob downloads). Supply this
+   * to add per-request tracing spans; omit for un-instrumented runs.
+   */
+  instrument?: InstrumentHook;
 };
 
 /**
@@ -183,6 +191,11 @@ export function ghcrSource(config: GhcrSourceConfig): SourceStrategy {
   const { binaryName, targetTag, compareVersions } = config;
   const client = new OciClient(config);
   const patchLayerName = `${binaryName}.patch`;
+  // Wrap an async network call in the consumer's instrumentation hook. If no
+  // hook was supplied, the call runs as-is (no behavioral overhead, no
+  // wrapping).
+  const i = <T>(name: string, fn: () => Promise<T>): Promise<T> =>
+    config.instrument ? config.instrument(name, fn) : fn();
 
   async function resolveNightlyChain(opts: {
     token: string;
@@ -224,7 +237,9 @@ export function ghcrSource(config: GhcrSourceConfig): SourceStrategy {
     const results = await Promise.all(
       chainTags.map(async (tag) => {
         try {
-          const manifest = await client.fetchManifest(token, tag, signal);
+          const manifest = await i("fetch-chain-manifest", () =>
+            client.fetchManifest(token, tag, signal),
+          );
           return { tag, manifest };
         } catch {
           // A manifest that's listed as a tag but fails to fetch is almost
@@ -263,9 +278,11 @@ export function ghcrSource(config: GhcrSourceConfig): SourceStrategy {
 
     const downloadResults = await Promise.all(
       validation.digests.map((digest) =>
-        client
-          .downloadBlobBuffer(token, digest, signal)
-          .then((buf) => new Uint8Array(buf)),
+        i("download-patch", () =>
+          client
+            .downloadBlobBuffer(token, digest, signal)
+            .then((buf) => new Uint8Array(buf)),
+        ),
       ),
     );
 
@@ -301,11 +318,15 @@ export function ghcrSource(config: GhcrSourceConfig): SourceStrategy {
       // `error`. Only BinpatchError (network) is swallowed; a programming bug
       // still propagates.
       try {
-        const token = await client.getAnonymousToken(signal);
+        const token = await i("ghcr-token", () => client.getAnonymousToken(signal));
 
         const [targetManifest, patchTags] = await Promise.all([
-          client.fetchManifest(token, targetTag(targetVersion), signal),
-          client.listTags(token, PATCH_TAG_PREFIX, signal),
+          i("fetch-target-manifest", () =>
+            client.fetchManifest(token, targetTag(targetVersion), signal),
+          ),
+          i("list-patch-tags", () =>
+            client.listTags(token, PATCH_TAG_PREFIX, signal),
+          ),
         ]);
 
         const gzLayer = targetManifest.layers.find(
