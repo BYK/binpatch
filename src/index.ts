@@ -35,6 +35,7 @@ export {
 export {
   type ChainStep,
   type DeltaResult,
+  type InstrumentHook,
   MAX_NIGHTLY_CHAIN_DEPTH,
   MAX_STABLE_CHAIN_DEPTH,
   PATCH_TAG_PREFIX,
