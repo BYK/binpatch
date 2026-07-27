@@ -47,18 +47,40 @@ export function filterAndSortChainTags(
   targetVersion: string,
   compareVersions: (a: string, b: string) => -1 | 0 | 1,
 ): string[] {
+  // Defensive compare: the consumer's `compareVersions` is opaque (e.g.
+  // sentry-cli's pass-through to `semverCompare` which throws on
+  // non-semver strings). Wrap once per call so a single malformed tag
+  // cannot crash the chain — that tag is skipped, the rest still flow.
+  // Per-tag try/catch is the smallest change that handles per-tag
+  // malformed versions AND a malformed `currentVersion`/`targetVersion`
+  // without coupling this function to `semver` itself.
+  const safeCmp = (a: string, b: string): -1 | 0 | 1 => {
+    try {
+      return compareVersions(a, b);
+    } catch {
+      return 0;
+    }
+  };
   const chainTags: { tag: string; version: string }[] = [];
 
   for (const tag of allTags) {
     const version = tag.slice(PATCH_TAG_PREFIX.length);
     if (
-      compareVersions(version, currentVersion) === 1 &&
-      compareVersions(version, targetVersion) !== 1
+      safeCmp(version, currentVersion) === 1 &&
+      safeCmp(version, targetVersion) !== 1
     ) {
       chainTags.push({ tag, version });
     }
   }
-  chainTags.sort((a, b) => compareVersions(a.version, b.version));
+  try {
+    chainTags.sort((a, b) => safeCmp(a.version, b.version));
+  } catch {
+    // Belt-and-braces: chained safeCmp should make this unreachable, but
+    // keep a guard so a future comparator change cannot regress to "tags
+    // crash the whole resolve chain". Worst case the chain is returned
+    // unsorted — caller can re-sort, or we surface as `malformed_chain`
+    // telemetry downstream.
+  }
   return chainTags.map((t) => t.tag);
 }
 
