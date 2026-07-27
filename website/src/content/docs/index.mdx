@@ -1,0 +1,83 @@
+---
+title: binpatch
+description: Reusable binary delta-update engine — TRDIFF10 apply, pluggable chain discovery, and a GitHub Action for end-to-end patch generation.
+template: splash
+hero:
+  tagline: Apply binary deltas in Node. Publish them from CI. Skip the megabytes.
+  actions:
+    - text: Get Started
+      link: ./installation/
+      icon: right-arrow
+    - text: View on GitHub
+      link: https://github.com/BYK/binpatch
+      icon: external
+      variant: minimal
+---
+
+import { Card, CardGrid } from "@astrojs/starlight/components";
+
+## What is binpatch?
+
+`binpatch` is a small, well-typed library that **applies** binary delta patches
+in the [TRDIFF10](https://github.com/getsentry/cli) wire format, plus a thin
+**discovery** layer for locating patch chains in OCI registries or GitHub
+Releases, plus a **GitHub Action** that publishes them. It is the public,
+extracted core of the upgrade system used by the [`sentry-cli`](https://github.com/getsentry/cli)
+and [`@loreai/gateway`](https://www.npmjs.com/package/@loreai/gateway) binaries.
+
+You ship a 287 MB binary. A new release only changes a few hundred KB.
+Without deltas every user pays for the full download. With `binpatch`,
+each user downloads a 188 KB patch and your apply logic — patch chain
+discovery, integrity verification, OOM guarding, progress reporting —
+already wired up.
+
+<CardGrid stagger>
+  <Card title="Pure-Node apply" icon="rocket">
+    Apply TRDIFF10 patches in ~220 ms for a 310 MB diff (SWAR-vectorized).
+    No native bindings, no WASM, no external processes.
+  </Card>
+  <Card title="Pluggable discovery" icon="puzzle">
+    Ship a <code>SourceStrategy</code>, get a chain resolved. Built-in
+    <code>ghcrSource()</code> and <code>githubReleaseSource()</code> for
+    OCI registries and GitHub Releases.
+  </Card>
+  <Card title="Wire contract" icon="document">
+    TRDIFF10 patch format, OCI tag scheme (`<code>:nightly</code>`,
+    `<code>:patch-\{version\}</code>`), and `<code>sha256-\{binaryName\}</code>`
+    annotations — documented and stable.
+  </Card>
+  <Card title="Hardened by default" icon="approve-check">
+    SHA-256 verification on the final output. <code>MAX_OUTPUT_SIZE = 2 GiB</code>
+    cap on attacker-controlled <code>newSize</code>. Per-HTTP instrumentation hook
+    for your own tracing.
+  </Card>
+  <Card title="GitHub Action" icon="github">
+    Composite Action for end-to-end patch generation + publish. Drop it into
+    a workflow; it shells out to a pinned bsdiff and pushes to GHCR/Releases.
+  </Card>
+  <Card title="MIT licensed" icon="seti:license">
+    Free for commercial and non-commercial use. Vendoring allowed.
+    Source on GitHub, packages on npm.
+  </Card>
+</CardGrid>
+
+## When to use binpatch
+
+Use it when you ship a self-updating binary and want to:
+
+- **Save your users bandwidth.** A 287 MB binary whose typical update
+  changes ~0.07% should not require a full re-download.
+- **Skip writing a discovery protocol yourself.** Plug in `ghcrSource()`
+  for nightly, `githubReleaseSource()` for stable — both resolve patch
+  chains against a target version.
+- **Match the wire format of a sister tool.** TRDIFF10 is what
+  [`sentry-cli`](https://github.com/getsentry/cli) and
+  [`@loreai/gateway`](https://www.npmjs.com/package/@loreai/gateway) speak.
+
+Do **not** use it when:
+
+- Your updates are source-level (use git, `npm update`, etc.).
+- You can ship a small binary — deltas only amortize at >50 MB or so.
+- You need a Courgette-style executable-aware diff (this is plain bsdiff;
+  see the [Architecture page](./architecture/#why-not-courgette-style-executable-aware-diff)
+  for why).
