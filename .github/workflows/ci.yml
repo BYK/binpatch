@@ -11,6 +11,7 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    name: test
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v5
@@ -21,3 +22,25 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+
+  # Pack the npm tarball on release branches only — Craft pulls this
+  # artifact by name (`npm-tarball`) from the `CI` workflow to publish
+  # to the npm registry. Skipped on PRs to keep their runs lean.
+  pack:
+    runs-on: ubuntu-latest
+    name: Build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm pack
+      - uses: actions/upload-artifact@v7
+        with:
+          name: npm-tarball
+          path: binpatch-*.tgz
+          if-no-files-found: error

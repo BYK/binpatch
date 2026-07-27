@@ -1,4 +1,6 @@
 node_modules/
 dist/
+website/.astro/
+website/dist/
 *.log
 .DS_Store

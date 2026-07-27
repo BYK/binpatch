@@ -1,0 +1,65 @@
+name: Pages
+
+# Deploys website/ to GitHub Pages on every push to main.
+#
+# The site is a static Astro/Starlight build (no SSR). The base path is
+# `/binpatch/` (matching the GitHub Pages repo path) — see
+# website/astro.config.mjs's `DOCS_BASE_PATH` env var override.
+#
+# Uses GitHub's official `actions/deploy-pages` which handles the
+# `pages-build-deployment` workflow + the special `github-pages`
+# environment that protects branch-based deploys.
+#
+# PR previews: not implemented yet. binpatch doesn't run many docs PRs
+# and we kept the initial pipeline simple. Add `DOCS_BASE_PATH` override
+# + an upload-artifact step on PRs when this becomes painful.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write # required for OIDC-based deploy (configured automatically)
+
+concurrency:
+  group: pages
+  cancel-in-progress: false # never cancel a deploy mid-flight
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      - name: Install dependencies
+        working-directory: website
+        run: npm ci
+
+      - name: Build site
+        working-directory: website
+        run: npm run build
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: website/dist/
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
