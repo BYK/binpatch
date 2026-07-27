@@ -49,12 +49,12 @@ jobs:
         run: npm run build
 
       - uses: actions/configure-pages@v5
-        with:
-          # Try to enable GitHub Pages via the API if not already
-          # configured. Falls through silently on orgs/repos that
-          # restrict the Pages API; in that case enable manually
-          # via Settings → Pages → Source: GitHub Actions.
-          enablement: true
+        # One-time manual step: Pages must be enabled for the repo via
+        # Settings → Pages → "Source: GitHub Actions". Until then this
+        # step fails with "Not Found — GET /pages site" and the build
+        # never reaches upload-pages-artifact. After enabling, the
+        # next main-push deploys to https://byk.github.io/binpatch/
+        # automatically and subsequent runs succeed.
 
       - uses: actions/upload-pages-artifact@v3
         with:
