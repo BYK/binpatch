@@ -1,0 +1,34 @@
+# Craft release config for `binpatch`.
+#
+# Single-package, single-target: npm via OIDC trusted publishing. Craft
+# auto-bumps package.json (no `workspace:*` deps to confuse `npm version
+# --no-git-tag-version`), discovers the npm tarball from the
+# `npm-tarball` CI artifact (uploaded by ci.yml on release branches), then
+# hands off to .github/workflows/publish.yml which calls `npm publish
+# --provenance --access public` using the OIDC identity bound to this
+# repo on npmjs.com.
+
+minVersion: '2.21.1'
+changelog:
+  policy: auto
+versioning:
+  policy: auto
+statusProvider:
+  name: github
+  config:
+    contexts:
+      # Must match the check-run names from ci.yml that produce release artifacts.
+      # Update these if you rename the jobs.
+      - "test"
+      - "Build"
+artifactProvider:
+  name: github
+  config:
+    artifacts:
+      # CI workflow uploads the npm tarball on release branches.
+      CI:
+        - npm-tarball
+targets:
+  - name: npm
+    access: public
+    oidc: true

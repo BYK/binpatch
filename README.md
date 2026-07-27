@@ -1,5 +1,9 @@
 # binpatch
 
+[![npm version](https://img.shields.io/npm/v/binpatch.svg)](https://www.npmjs.com/package/binpatch)
+[![CI](https://github.com/BYK/binpatch/actions/workflows/ci.yml/badge.svg)](https://github.com/BYK/binpatch/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 Reusable binary delta-update engine. Apply a **TRDIFF10 / bsdiff+zstd** patch
 chain to a binary, discover chains from a pluggable source (OCI/GHCR tags or
 GitHub Release assets), and generate + publish patches via a composite GitHub
@@ -8,6 +12,8 @@ Action. Pure Node, zero product coupling.
 ```sh
 npm install binpatch
 ```
+
+**Docs:** https://byk.github.io/binpatch/ · **Source:** https://github.com/BYK/binpatch
 
 ## Why
 
