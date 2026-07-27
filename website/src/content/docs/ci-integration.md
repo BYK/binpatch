@@ -92,7 +92,7 @@ await resolveAndApply({
     });
   },
   telemetry: {
-    onResolved: ({ source }) => Sentry.setTag("delta.source", source ?? "none"),
+    onResolved: ({ source }) => Sentry.setTag("delta.source", source),
     onUnavailable: (reason) => Sentry.setTag("delta.unavailable_reason", reason),
     onOfflineMiss: () => Sentry.captureMessage("offline cache miss"),
   },
@@ -141,8 +141,10 @@ caching:
 ```ts
 import { makeCache } from "binpatch";
 import { join } from "node:path";
+import { homedir } from "node:os";
 
-const cache = makeCache(join(xdgCacheHome, "myapp", "patches"));
+const cacheRoot = process.env.XDG_CACHE_HOME ?? join(homedir(), ".cache");
+const cache = makeCache(join(cacheRoot, "myapp", "patches"));
 
 await resolveAndApply({
   // ...

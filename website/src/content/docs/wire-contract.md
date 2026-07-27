@@ -105,8 +105,11 @@ in version order, capped at `MAX_STABLE_CHAIN_DEPTH = 10` hops.
 A **chain** is an ordered sequence of patches spanning consecutive
 versions. For a user on `1.2.2` upgrading to `1.2.5` with three
 patches published (1.2.2→1.2.3, 1.2.3→1.2.4, 1.2.4→1.2.5), the
-chain is all three. The library applies them in order, hash-checking
-the cumulative result against each hop's `sha256-<binaryName>`.
+chain is all three. The library applies them in order; only the
+**final** binary's SHA-256 is verified against the target's expected
+hash. Intermediate hops are trusted (a corrupt intermediate hop
+will fail the final hash check anyway). See [Security →](./security/#sha-256-verification-sole-trust-anchor)
+for the rationale.
 
 Chain depth limits (defensive — caller can override):
 - `MAX_STABLE_CHAIN_DEPTH = 10` (GitHub Releases channel)

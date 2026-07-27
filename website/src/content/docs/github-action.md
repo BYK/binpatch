@@ -99,27 +99,40 @@ jobs:
 | `version` | only for ghcr modes | — | The version tag (e.g. `1.2.3-dev.1784814623`) |
 | `repo` | only for ghcr modes | — | OCI repo name (`<owner>/<app>`) |
 | `registry` | only for ghcr modes | `ghcr.io` | OCI registry host |
-| `binary-glob` | no | `lore-*` | Pattern for the gzipped binary files |
+| `binary-glob` | no | `*` | Pattern for the gzipped binary files |
 | `new-binaries-dir` | no | `new-binaries` | Directory holding the freshly built UNCOMPRESSED binaries (patch sources and SHA-256 inputs) |
 | `new-gz-dir` | no | `new-binaries` | Directory holding the freshly built .gz binaries (used for the size-ratio gate). May be the same as `new-binaries-dir` |
 | `binaries-dir` | no | `binaries` | `publish-ghcr`: directory with UNCOMPRESSED binaries for SHA-256 annotation computation |
-| `max-ratio` | no | `50` | Max patch/binary size ratio |
+| `artifacts-dir` | no | `artifacts` | `publish-ghcr`: directory with the .gz binaries to push as registry layers |
+| `patches-dir` | no | `patches` | Where patches live (written in `generate-*`, read in `publish-ghcr`). The CI uses `.delta-patches/` (dotted to avoid collision with pnpm `patchedDependencies`); pass that here. |
+| `nightly-tag` | no | `nightly` | Mutable nightly tag name |
+| `nightly-tag-prefix` | no | `nightly-` | Prefix for versioned nightly tags (e.g. `nightly-1.2.3-dev.1784814623`) |
+| `patch-tag-prefix` | no | `patch-` | Patch tag name prefix (e.g. `patch-1.2.3-dev.1784814623`) |
+| `artifact-type-prefix` | no | `application/vnd.lore.cli` | OCI artifact type prefix |
+| `max-ratio` | no | `50` | Max patch/binary size ratio (percent). Patches larger than this are dropped. |
+| `zig-bsdiff-version` | no | `0.1.19` | Pinned bsdiff version to download |
+| `zig-bsdiff-sha256` | no | `9f1ac7…b9` | SHA-256 of the pinned bsdiff binary. Verify before bumping. |
+| `oras-version` | no | `1.3.1` | Pinned ORAS version to download |
+| `oras-sha256` | no | `d52c4a…86` | SHA-256 of the pinned ORAS binary. Verify before bumping. |
+| `patch-push-fatal` | no | `false` | When `true`, a failed patch-manifest push aborts `publish-ghcr`. Default is non-fatal (delta upgrades are optional — don't fail the publish job over a transient push error). |
 
 ### publish-ghcr
 
-| Input | Required | Description |
-|-------|----------|-------------|
-| `patches-dir` | no | Where to read patches (default `.delta-patches/`) |
-| `nightly-tag` | no | Mutable nightly tag name (default `nightly`) |
-| `patch-tag-prefix` | no | Patch tag name prefix (default `patch-`) |
+No additional inputs beyond the common table. `patches-dir`,
+`nightly-tag`, `nightly-tag-prefix`, `patch-tag-prefix`,
+`artifact-type-prefix`, and `patch-push-fatal` are listed there.
 
 ### generate-release
 
-| Input | Required | Description |
-|-------|----------|-------------|
-| `github-repo` | yes | `<owner>/<repo>` for the GitHub Releases API |
-| `github-token` | yes | Token with `repo` scope |
-| `artifacts-dir` | no | Where to write release-ready artifacts (default `.delta-patches/`) |
+| Input | Required | Default | Description |
+|-------|----------|---------|-------------|
+| `github-repo` | no | `${{ github.repository }}` | `<owner>/<repo>` for the GitHub Releases API |
+| `github-token` | yes | — | Token with `repo` scope |
+| `artifacts-dir` | no | `patches` | Where to write release-ready artifacts |
+
+> All other inputs from the common table apply. Inputs not used in
+> `generate-release` (e.g. `nightly-tag`, `patch-tag-prefix`) are
+> silently ignored.
 
 ## Outputs
 

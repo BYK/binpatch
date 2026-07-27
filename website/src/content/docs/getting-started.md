@@ -22,26 +22,26 @@ final binary to `destPath`, and returns its SHA-256 inline.
 ## A slightly richer example
 
 ```ts
-import { applyPatch } from "binpatch";
+import { applyPatchChainInMemory } from "binpatch";
 import { readFile, writeFile } from "node:fs/promises";
 
 // 1. Load the patch bytes (e.g. downloaded from your release server).
 const patchRes = await fetch("https://updates.example.com/myapp-1.2.3.patch");
 const patches = [new Uint8Array(await patchRes.arrayBuffer())];
 
-// 2. Apply. `applyPatch` reads the old binary at oldPath on demand
-//    (using positional reads — safe even when oldPath === destPath),
+// 2. Apply. `applyPatchChainInMemory` reads the old binary at oldPath
+//    on demand (positional reads — safe even when oldPath === destPath),
 //    keeps intermediate hops in RAM, and writes only the final binary
 //    to destPath. Returns the SHA-256 of the final output.
-const sha256 = await applyPatch(
+const sha256 = await applyPatchChainInMemory(
   "/usr/local/bin/myapp",      // currently-installed binary
   patches,                      // ordered chain (oldest first)
   "/usr/local/bin/myapp.new",   // final output path
-  (bytes) => console.log(`${bytes} bytes applied`),
+  (bytes) => console.log(`${bytes} bytes applied`),  // per-chunk callback
 );
 
 // 3. Verify (you compare against the expected SHA-256 from your release
-//    metadata; `applyPatch` does not know what you expected).
+//    metadata; `applyPatchChainInMemory` does not know what you expected).
 if (sha256 !== expectedSha256) {
   throw new Error(`SHA-256 mismatch: got ${sha256}, expected ${expectedSha256}`);
 }

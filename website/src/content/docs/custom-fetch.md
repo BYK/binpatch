@@ -57,10 +57,11 @@ Both built-in sources accept `fetch` in their config:
 const source = ghcrSource({
   registry: "https://ghcr.io",
   repo: "your-org/your-app",
-  binaryName: "myapp",
+  userAgent: "myapp/1.2.3",                // required
+  binaryName: "myapp-linux-x64",
   targetTag: (version) => `nightly-${version}`,
   compareVersions: semver.compare,
-  fetch: customFetch, // <-- here
+  fetch: customFetch,                      // optional — defaults to globalThis.fetch
 });
 ```
 
@@ -133,12 +134,13 @@ injected — your test fixture is the only HTTP path.
 
 ## Common pitfalls
 
-**Forgot to inject on the source vs. on `resolveAndApply`.**
-`resolveAndApply`'s `fetch` flows to its internal calls; sources
-manage their own HTTP. If you inject only on `resolveAndApply`,
-the source's HTTP still uses global fetch. Inject on the source's
-config object (`ghcrSource({ fetch })`) when you need to cover
-discovery too.
+**Forgot to inject `fetch` on the source.** Sources manage their
+own HTTP (manifest fetches, blob downloads, API calls). The
+`fetch` field lives on the source's config object
+(`ghcrSource({ fetch })` / `githubReleaseSource({ fetch })`).
+`resolveAndApply` has no top-level `fetch` slot — there's nothing
+to inject there. Cover discovery by configuring `fetch` on the
+source.
 
 **Forgot about HTTPS-vs-HTTP redirect upgrades.**
 If you use `undici`'s `Agent` with `connect.rejectUnauthorized`,

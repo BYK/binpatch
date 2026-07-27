@@ -78,10 +78,9 @@ npm install binpatch
 
 ## What's the difference between `applyPatch`, `applyPatchToMemory`, and `applyPatchChainInMemory`?
 
-- `applyPatch` — single patch, file-based. Writes to disk.
-- `applyPatchToMemory` — single patch, in-memory.
-- `applyPatchChainInMemory` — chain of patches, in-memory.
-  Intermediate hops stay in RAM; only the final hop writes.
+- `applyPatch` — single patch, file-based. Reads oldPath, writes destPath. Returns SHA-256.
+- `applyPatchToMemory` — single patch, in-memory. Takes a `Uint8Array` old binary, returns the new `Uint8Array`.
+- `applyPatchChainInMemory` — chain of patches, file-based for old/dest (reads oldPath, writes destPath). Intermediate hops stay in RAM; only the final hop writes to destPath. Returns SHA-256.
 
 `applyPatchChainInMemory` is what `resolveAndApply` uses internally
 and is the right entry point for most consumers.
