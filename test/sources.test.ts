@@ -204,6 +204,42 @@ describe("filterAndSortChainTags", () => {
       "patch-1.1.0",
     ]);
   });
+
+  it("skips tags whose compareVersions throws (defensive against non-semver strings)", () => {
+    // Real-world: sentry-cli's compareVersions is a pass-through to
+    // `semverCompare`, which throws TypeError on non-semver strings. A
+    // single malformed tag must not crash the chain — it should be
+    // skipped and the rest of the chain built from the well-formed tags.
+    const tags = [
+      "patch-1.1.0",
+      "patch-not-a-version", // compareVersions would throw → skip
+      "patch-1.2.0",
+    ];
+    const throwingCmp = (a: string, b: string): -1 | 0 | 1 => {
+      if (a === "not-a-version" || b === "not-a-version") {
+        throw new TypeError("Invalid Version");
+      }
+      return cmp(a, b);
+    };
+    expect(
+      filterAndSortChainTags(tags, "1.0.0", "1.3.0", throwingCmp),
+    ).toEqual(["patch-1.1.0", "patch-1.2.0"]);
+  });
+
+  it("treats a malformed current/target as 0 (returns all well-formed tags)", () => {
+    // If currentVersion or targetVersion is itself malformed, every
+    // per-tag compare throws. The safe comparison returns 0 (treats as
+    // "not strictly greater"), so well-formed tags in (current, target]
+    // still get included if their relative order computes correctly.
+    const tags = ["patch-1.1.0", "patch-1.2.0", "patch-1.3.0"];
+    const partialCmp = (a: string, b: string): -1 | 0 | 1 => {
+      if (a === "bogus-current" || b === "bogus-current") return 0;
+      return cmp(a, b);
+    };
+    expect(
+      filterAndSortChainTags(tags, "bogus-current", "1.3.0", partialCmp),
+    ).toEqual([]);
+  });
 });
 
 describe("validateChainStep", () => {
