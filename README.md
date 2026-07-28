@@ -32,9 +32,9 @@ projects hand-roll separately (and get wrong):
 
 `binpatch` gives you **both** as one MIT-licensed TypeScript library plus a
 drop-in GitHub Action. It's the apply/discovery core extracted from
-Powers self-updates in production for several shipped CLI binaries serving
-millions of installs. Battle-tested reliability — minus the years of
-accumulated fixes you'd otherwise have to write yourself.
+Powers self-updates in production for shipped CLI binaries you may
+already be using. Battle-tested reliability — minus the years of accumulated
+fixes you'd otherwise have to write yourself.
 
 ## Scope
 
