@@ -7,23 +7,7 @@ decisions and trade-offs so contributors don't accidentally regress them.
 
 ## High-level shape
 
-```
-                          ┌──────────────────────────┐
-   your code              │  binpatch (this library) │
-   ─────────────────────► │                          │
-                          │  resolveAndApply:        │
-                          │   ┌────────────────────┐ │
-                          │   │ SourceStrategy     │ │  ← pluggable
-                          │   │  .resolveChain()   │ │
-                          │   └────────┬───────────┘ │
-                          │            ▼             │
-                          │   fetch patches           │
-                          │   apply each hop          │
-                          │   verify SHA-256          │
-                          │   emit ProgressEvents     │
-                          │   return result           │
-                          └──────────────────────────┘
-```
+![High-level shape: your code calls `resolveAndApply`, which uses a pluggable `SourceStrategy` to discover patches, then fetches, applies each hop, verifies SHA-256, emits progress events, and returns the result.](../../assets/architecture-flow.svg)
 
 `resolveAndApply` is the single entry point for the discovery + apply
 flow. The pure apply functions (`applyPatchChainInMemory`, etc.) are
