@@ -122,7 +122,7 @@ stream instead — see [Progress & events](./progress/).
 
 ## Performance
 
-Benchmarks on a 2021 M1 MacBook Pro, ~310 MB binary, narrow-gap
+Benchmarks on a 2021 M1 MacBook Pro, ~100 MB binary, narrow-gap
 consecutive-nightly diff:
 
 | Implementation | Time |

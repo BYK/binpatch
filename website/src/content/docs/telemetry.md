@@ -36,7 +36,10 @@ result (success or rejection). The library calls it as
 ## Wiring it in
 
 ```ts
-import { withTracing, ghcrSource } from "binpatch"; // hypothetical re-export
+import { ghcrSource } from "binpatch";
+// `withTracing` is *your* telemetry module — the library doesn't ship one.
+// Wrap each instrumented step however your SDK expects.
+import { withTracing } from "./telemetry.js";
 
 const instrument: InstrumentHook = (name, fn) =>
   withTracing(name, "http.client", fn);

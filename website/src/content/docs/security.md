@@ -66,8 +66,8 @@ try {
 ```
 
 We chose 2 GiB because:
-- Real-world binaries (`sentry-cli`, `@loreai/gateway`) are 300-500 MB.
-- Even a hypothetical 10× growth from a 287 MB binary tops out at ~3 GB,
+- Real-world self-updating CLI binaries are typically 100–500 MB.
+- Even a hypothetical 10× growth from a 100 MB binary tops out at ~3 GB,
   which is above our cap — but legitimate patches in that range are
   not the consumers of `binpatch`'s simple apply path. If you ship
   multi-GB binaries, set `MAX_OUTPUT_SIZE` higher in your consumer

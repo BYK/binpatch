@@ -1,0 +1,78 @@
+name: Docs Preview
+
+# PR-preview deploys and cleanup only. Production deploys to GitHub Pages
+# live in pages.yml (push: main) — kept separate so a merge's simultaneous
+# `push: main` and `pull_request: closed` triggers never race and cancel
+# each other.
+#
+# Build/deploy is gated on website-related changes via dorny/paths-filter so
+# non-docs PRs don't pay for an Astro build they don't need.
+
+on:
+  workflow_dispatch:
+  pull_request:
+    # No paths filter on pull_request: the 'closed' event must always fire so
+    # the preview action can clean up deployed previews. A paths-filter step
+    # inside the job skips the build/deploy for non-website PRs.
+    types: [opened, reopened, synchronize, closed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: docs-preview-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      # Check if website files changed. On 'closed' events we always proceed
+      # (cleanup). Otherwise we only build/deploy when website files changed.
+      - name: Check for website changes
+        id: filter
+        if: github.event.action != 'closed'
+        uses: dorny/paths-filter@v4
+        with:
+          filters: |
+            website:
+              - 'website/**'
+              - '.github/workflows/docs-preview.yml'
+
+      - name: Install dependencies
+        if: >-
+          (github.event.action == 'closed' || steps.filter.outputs.website == 'true') &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        working-directory: website
+        run: npm ci
+
+      - name: Build site
+        if: >-
+          (github.event.action == 'closed' || steps.filter.outputs.website == 'true') &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        working-directory: website
+        run: npm run build
+        env:
+          PR_NUMBER: ${{ github.event.number }}
+          DOCS_BASE_PATH: /_preview/pr-${{ github.event.number }}/
+
+      - name: Deploy PR Preview
+        if: >-
+          (github.event.action == 'closed' || steps.filter.outputs.website == 'true') &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        uses: rossjrw/pr-preview-action@v1
+        with:
+          source-dir: website/dist/
+          preview-branch: gh-pages
+          umbrella-dir: _preview
+          pages-base-url: binpatch.p.byk.im
+          action: auto

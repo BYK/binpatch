@@ -17,30 +17,40 @@ npm install binpatch
 
 ## Why
 
-Self-updating CLIs ship large single-file binaries; re-downloading the whole
-thing on every release is wasteful when consecutive builds differ by a fraction
-of a percent. `binpatch` applies a small delta patch (chain) to the installed
-binary instead, falling back to a full download only when no chain is available.
+Every time you `mycli update`, you pull the **entire binary again** — even when
+the new release changed a few hundred kilobytes of a 100&nbsp;MB file. That's
+bandwidth and patience burned on bytes that didn't move. A binary delta (bsdiff)
+between consecutive builds is typically **0.05–0.1%** of the full size, so that
+100&nbsp;MB download becomes a ~190&nbsp;KB patch.
 
-It exists because two projects independently carried the same delta-update code,
-ported from a common ancestor, and drifted apart — a bug fixed in one was
-missing in the other. `binpatch` is the shared, general-purpose extraction so
-that code lives in exactly one place.
+The hard part isn't making the patch — it's the **two halves** that most
+projects hand-roll separately (and get wrong):
+
+1. **Generate + publish** the patch from CI, somewhere users can find it.
+2. **Discover + apply** the right patch(es) for a user's installed version,
+   safely (integrity check, size cap, progress).
+
+`binpatch` gives you **both** as one MIT-licensed TypeScript library plus a
+drop-in GitHub Action. It's the apply/discovery core extracted from
+Powers self-updates in production for shipped CLI binaries you may
+already be using. Battle-tested reliability — minus the years of accumulated
+fixes you'd otherwise have to write yourself.
 
 ## Scope
 
-The system splits into two halves joined by a single **wire contract**:
+Two halves, one wire contract:
 
-1. **Apply + discovery** — runtime code that runs inside the consumer's binary.
-   This npm package. Pure Node (`node:*` builtins only), zero product coupling.
+1. **Apply + discovery** — runtime code that runs inside your binary. This npm
+   package. Pure Node (`node:*` builtins only), zero product coupling.
 2. **Generation + publishing** — CI-side patch creation and upload to
-   GHCR / GitHub Releases. A reusable GitHub Action (separate, later).
+   GHCR / GitHub Releases, shipped as a composite GitHub Action in
+   [`action/`](./action).
 
-This package covers the **apply core** (patch parsing, chain application, an
-offline cache) and **chain discovery** — a pluggable `SourceStrategy` over
-OCI/GHCR patch-manifest tags and GitHub Release assets, plus a cache-first
-`resolveAndApply` orchestrator. The CI-side patch *generation* half ships in the
-same repo as a composite GitHub Action (see [`action/`](./action)).
+This package covers the **apply core** (TRDIFF10 patch parsing, chain
+application, an offline cache) and **chain discovery** — a pluggable
+`SourceStrategy` over OCI/GHCR patch-manifest tags and GitHub Release assets,
+plus a cache-first `resolveAndApply` orchestrator. The CI-side generation half
+ships in the same repo as a composite GitHub Action.
 
 ## API
 

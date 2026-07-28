@@ -128,5 +128,5 @@ licensed under the project's MIT license.
 
 ## Next
 
-- [Architecture →](./architecture/) — design decisions, why bsdiff, why SWAR
+- [Architecture →](../architecture/) — design decisions, why bsdiff, why SWAR
 - [FAQ →](./faq/) — common questions

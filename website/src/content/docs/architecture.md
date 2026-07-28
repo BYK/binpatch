@@ -7,23 +7,7 @@ decisions and trade-offs so contributors don't accidentally regress them.
 
 ## High-level shape
 
-```
-                          ┌──────────────────────────┐
-   your code              │  binpatch (this library) │
-   ─────────────────────► │                          │
-                          │  resolveAndApply:        │
-                          │   ┌────────────────────┐ │
-                          │   │ SourceStrategy     │ │  ← pluggable
-                          │   │  .resolveChain()   │ │
-                          │   └────────┬───────────┘ │
-                          │            ▼             │
-                          │   fetch patches           │
-                          │   apply each hop          │
-                          │   verify SHA-256          │
-                          │   emit ProgressEvents     │
-                          │   return result           │
-                          └──────────────────────────┘
-```
+![High-level shape: your code calls `resolveAndApply`, which uses a pluggable `SourceStrategy` to discover patches, then fetches, applies each hop, verifies SHA-256, emits progress events, and returns the result.](/architecture-flow.svg)
 
 `resolveAndApply` is the single entry point for the discovery + apply
 flow. The pure apply functions (`applyPatchChainInMemory`, etc.) are
@@ -63,7 +47,7 @@ const sign = 0x80808080;
 ((a & mask) + (b & mask)) ^ ((a ^ b) & sign);
 ```
 
-For a 310 MB binary where ~99% of diff blocks are zero-dominated and
+For a 100 MB binary where ~99% of diff blocks are zero-dominated and
 bsdiff has already crushed them into the high 8-12 KB of the patch,
 this 4-byte-per-cycle approach takes ~220 ms vs ~883 ms for the
 naive byte loop on the same machine (~4× faster).
@@ -83,7 +67,7 @@ gives Chrome ~10× patch-size wins on full Chromium updates. We do
 not use it because:
 
 - The bsdiff seek mechanism already collapses most pointer churn
-  into small seek distances. We measured: a 310 MB binary with
+  into small seek distances. We measured: a 100 MB binary with
   constant `-605 byte` offset shift in the bundled JS payload
   produces a 189 KB patch — that's 0.066% of the binary.
 - Courgette requires understanding the executable format in detail
@@ -107,8 +91,8 @@ to avoid loading it fully into RAM. We chose not to because:
 
 - Bun's native mmap is unavailable — we migrated off Bun.
 - `mmap-io` and similar native addons break esbuild + Node SEA
-  bundling, which `@loreai/gateway` and `sentry-cli` both use.
-- For a 310 MB binary, an in-memory `Uint8Array` is fine: it's about
+  bundling, which several shipped CLI consumers rely on.
+- For a 100 MB binary, an in-memory `Uint8Array` is fine: it's about
   1% of a typical CI runner's RAM budget.
 
 If your binary is much larger (>1 GB), the public

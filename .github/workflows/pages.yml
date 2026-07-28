@@ -1,32 +1,25 @@
 name: Pages
 
-# Deploys website/ to GitHub Pages on every push to main.
+# Deploys website/ to GitHub Pages.
 #
-# The site is a static Astro/Starlight build (no SSR). The base path is
-# `/binpatch/` (matching the GitHub Pages repo path) — see
-# website/astro.config.mjs's `DOCS_BASE_PATH` env var override.
-#
-# Uses GitHub's official `actions/deploy-pages` which handles the
-# `pages-build-deployment` workflow + the special `github-pages`
-# environment that protects branch-based deploys.
-#
-# PR previews: not implemented yet. binpatch doesn't run many docs PRs
-# and we kept the initial pipeline simple. Add `DOCS_BASE_PATH` override
-# + an upload-artifact step on PRs when this becomes painful.
+# Production builds on push: main and publishes to the `gh-pages` branch.
+# PR previews are handled by docs-preview.yml (same branch, `_preview`
+# umbrella dir) so both live on one Pages source and never race.
 
 on:
   push:
     branches: [main]
+    paths:
+      - 'website/**'
+      - '.github/workflows/pages.yml'
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write # required for OIDC-based deploy (configured automatically)
+  contents: write
 
 concurrency:
   group: pages
-  cancel-in-progress: false # never cancel a deploy mid-flight
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -48,24 +41,38 @@ jobs:
         working-directory: website
         run: npm run build
 
-      - uses: actions/configure-pages@v5
-        # One-time manual step: Pages must be enabled for the repo via
-        # Settings → Pages → "Source: GitHub Actions". Until then this
-        # step fails with "Not Found — GET /pages site" and the build
-        # never reaches upload-pages-artifact. After enabling, the
-        # next main-push deploys to https://byk.github.io/binpatch/
-        # automatically and subsequent runs succeed.
+      - name: Ensure .nojekyll at gh-pages root
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - uses: actions/upload-pages-artifact@v3
+          if git fetch origin gh-pages:gh-pages 2>/dev/null; then
+            if git show gh-pages:.nojekyll &>/dev/null; then
+              echo ".nojekyll already exists at gh-pages root"
+            else
+              echo "Adding .nojekyll to existing gh-pages branch"
+              git checkout gh-pages
+              touch .nojekyll
+              git add .nojekyll
+              git commit -m "Add .nojekyll to disable Jekyll processing"
+              git push origin gh-pages
+              git checkout "$GITHUB_SHA"
+            fi
+          else
+            echo "Creating gh-pages branch with .nojekyll"
+            git checkout --orphan gh-pages
+            git rm -rf .
+            touch .nojekyll
+            git add .nojekyll
+            git commit -m "Initialize gh-pages with .nojekyll"
+            git push origin gh-pages
+            git checkout "$GITHUB_SHA"
+          fi
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
         with:
-          path: website/dist/
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          folder: website/dist
+          branch: gh-pages
+          clean-exclude: _preview
+          force: false

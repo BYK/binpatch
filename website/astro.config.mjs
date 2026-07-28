@@ -1,22 +1,47 @@
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
 
-// Allow base path override via env var for the site-deploy workflow's
-// PR previews (`/_preview/pr-<n>/binpatch/`). Production serves from
-// `/binpatch/` (subpath of the user's GitHub Pages domain).
-const base = process.env.DOCS_BASE_PATH || "/binpatch/";
+// Production serves from the root of the custom domain binpatch.p.byk.im.
+// PR previews are built under `/_preview/pr-<n>/` (pr-preview-action's
+// umbrella dir) — same root, so DOCS_BASE_PATH points there with no /binpatch/.
+const base = process.env.DOCS_BASE_PATH || "/";
 
 export default defineConfig({
-  site: "https://byk.github.io",
+  site: "https://binpatch.p.byk.im",
   base,
   integrations: [
     starlight({
       title: "binpatch",
       description:
-        "Reusable binary delta-update engine — TRDIFF10 apply, pluggable chain discovery, and a GitHub Action for end-to-end patch generation.",
+        "Stop re-downloading the entire binary on every CLI update. binpatch generates and applies small binary delta patches — the same engine sentry-cli uses.",
       logo: {
         src: "./src/assets/logo.svg",
+        replacesTitle: true,
       },
+      head: [
+        {
+          tag: "link",
+          attrs: {
+            rel: "preconnect",
+            href: "https://fonts.googleapis.com",
+          },
+        },
+        {
+          tag: "link",
+          attrs: {
+            rel: "preconnect",
+            href: "https://fonts.gstatic.com",
+            crossorigin: "anonymous",
+          },
+        },
+        {
+          tag: "link",
+          attrs: {
+            rel: "stylesheet",
+            href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400;500&display=swap",
+          },
+        },
+      ],
       social: [
         {
           icon: "github",
@@ -67,7 +92,7 @@ export default defineConfig({
           ],
         },
       ],
-      customCss: [],
+      customCss: ["./src/custom.css"],
     }),
   ],
 });

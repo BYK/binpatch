@@ -10,21 +10,15 @@ calling `applyPatchChainInMemory`) only need to know they exist.
 
 A patch is a single binary file with this layout:
 
-```
-┌──────────────────────────────────────────┐
-│ Magic: "TRDIFF10" (8 bytes, ASCII)       │
-├──────────────────────────────────────────┤
-│ controlLen: int64 LE (8 bytes)           │  size of uncompressed control block
-│ diffLen:    int64 LE (8 bytes)           │  size of uncompressed diff block
-│ newSize:    int64 LE (8 bytes)           │  total size of the post-apply file
-├──────────────────────────────────────────┤
-│ control: zstd-frame                       │  controlLen bytes raw → compressed
-├──────────────────────────────────────────┤
-│ diff:    zstd-frame                       │  diffLen bytes raw → compressed
-├──────────────────────────────────────────┤
-│ extra:   zstd-frame                       │  newSize bytes of literal output → compressed
-└──────────────────────────────────────────┘
-```
+| Offset | Size | Field | Description |
+|--------|------|-------|-------------|
+| 0 | 8 bytes | Magic | ASCII string `"TRDIFF10"`. |
+| 8 | 8 bytes | `controlLen` | Size of the uncompressed control block (LE int64). |
+| 16 | 8 bytes | `diffLen` | Size of the uncompressed diff block (LE int64). |
+| 24 | 8 bytes | `newSize` | Total size of the post-apply file (LE int64, sign-magnitude). |
+| 32 | `controlLen` | `control` | zstd-compressed control block (tuples). |
+| 32 + controlLen | `diffLen` | `diff` | zstd-compressed diff block (XOR-differences). |
+| 32 + controlLen + diffLen | (compressed) | `extra` | zstd-compressed literal output. |
 
 The **control block** is a series of 24-byte tuples (little-endian):
 
