@@ -1,13 +1,13 @@
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
 
-// Production serves from `/binpatch/` (subpath of the GitHub Pages domain).
-// PR previews are built under `/_preview/pr-<n>/binpatch/` to mirror the
-// pr-preview-action umbrella layout, so set DOCS_BASE_PATH there.
-const base = process.env.DOCS_BASE_PATH || "/binpatch/";
+// Production serves from the root of the custom domain binpatch.p.byk.im.
+// PR previews are built under `/_preview/pr-<n>/` (pr-preview-action's
+// umbrella dir) — same root, so DOCS_BASE_PATH points there with no /binpatch/.
+const base = process.env.DOCS_BASE_PATH || "/";
 
 export default defineConfig({
-  site: "https://byk.github.io",
+  site: "https://binpatch.p.byk.im",
   base,
   integrations: [
     starlight({

@@ -63,7 +63,7 @@ jobs:
         run: npm run build
         env:
           PR_NUMBER: ${{ github.event.number }}
-          DOCS_BASE_PATH: /_preview/pr-${{ github.event.number }}/binpatch/
+          DOCS_BASE_PATH: /_preview/pr-${{ github.event.number }}/
 
       - name: Deploy PR Preview
         if: >-
@@ -74,5 +74,5 @@ jobs:
           source-dir: website/dist/
           preview-branch: gh-pages
           umbrella-dir: _preview
-          pages-base-url: byk.github.io
+          pages-base-url: binpatch.p.byk.im
           action: auto
