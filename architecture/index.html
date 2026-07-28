@@ -103,7 +103,7 @@ file holds shared types (constants, chain limits, etc.).</p>
 block into the destination window. We use SWAR (SIMD-within-a-register)
 to process 4 bytes at a time on 32-bit words:</p>
 <div class="expressive-code"><figure class="frame not-content"><figcaption class="header"></figcaption><pre data-language="ts"><code><div class="ec-line"><div class="code"><span style="--0:#919F9F;--1:#5D6376">// 32-bit SWAR: 4 bytes added in one cycle</span></div></div><div class="ec-line"><div class="code"><span style="--0:#C792EA;--1:#8844AE">const </span><span style="--0:#82AAFF;--1:#3B61B0">mask</span><span style="--0:#C792EA;--1:#8844AE"> = </span><span style="--0:#F78C6C;--1:#AA0982">0x7f7f7f7f</span><span style="--0:#D6DEEB;--1:#403F53">;</span></div></div><div class="ec-line"><div class="code"><span style="--0:#C792EA;--1:#8844AE">const </span><span style="--0:#82AAFF;--1:#3B61B0">sign</span><span style="--0:#C792EA;--1:#8844AE"> = </span><span style="--0:#F78C6C;--1:#AA0982">0x80808080</span><span style="--0:#D6DEEB;--1:#403F53">;</span></div></div><div class="ec-line"><div class="code"><span style="--0:#D6DEEB;--1:#403F53">((a </span><span style="--0:#C792EA;--1:#8844AE">&amp;</span><span style="--0:#D6DEEB;--1:#403F53"> mask) </span><span style="--0:#C792EA;--1:#8844AE">+</span><span style="--0:#D6DEEB;--1:#403F53"> (b </span><span style="--0:#C792EA;--1:#8844AE">&amp;</span><span style="--0:#D6DEEB;--1:#403F53"> mask)) </span><span style="--0:#C792EA;--1:#8844AE">^</span><span style="--0:#D6DEEB;--1:#403F53"> ((a </span><span style="--0:#C792EA;--1:#8844AE">^</span><span style="--0:#D6DEEB;--1:#403F53"> b) </span><span style="--0:#C792EA;--1:#8844AE">&amp;</span><span style="--0:#D6DEEB;--1:#403F53"> sign);</span></div></div></code></pre><div class="copy"><div aria-live="polite"></div><button title="Copy to clipboard" data-copied="Copied!" data-code="// 32-bit SWAR: 4 bytes added in one cycleconst mask = 0x7f7f7f7f;const sign = 0x80808080;((a &amp; mask) + (b &amp; mask)) ^ ((a ^ b) &amp; sign);"><div></div></button></div></figure></div>
-<p>For a 310 MB binary where ~99% of diff blocks are zero-dominated and
+<p>For a 100 MB binary where ~99% of diff blocks are zero-dominated and
 bsdiff has already crushed them into the high 8-12 KB of the patch,
 this 4-byte-per-cycle approach takes ~220 ms vs ~883 ms for the
 naive byte loop on the same machine (~4× faster).</p>
@@ -120,7 +120,7 @@ gives Chrome ~10× patch-size wins on full Chromium updates. We do
 not use it because:</p>
 <ul>
 <li>The bsdiff seek mechanism already collapses most pointer churn
-into small seek distances. We measured: a 310 MB binary with
+into small seek distances. We measured: a 100 MB binary with
 constant <code dir="auto">-605 byte</code> offset shift in the bundled JS payload
 produces a 189 KB patch — that’s 0.066% of the binary.</li>
 <li>Courgette requires understanding the executable format in detail
@@ -142,8 +142,8 @@ to avoid loading it fully into RAM. We chose not to because:</p>
 <ul>
 <li>Bun’s native mmap is unavailable — we migrated off Bun.</li>
 <li><code dir="auto">mmap-io</code> and similar native addons break esbuild + Node SEA
-bundling, which <code dir="auto">@loreai/gateway</code> and <code dir="auto">sentry-cli</code> both use.</li>
-<li>For a 310 MB binary, an in-memory <code dir="auto">Uint8Array</code> is fine: it’s about
+bundling, which several shipped CLI consumers rely on.</li>
+<li>For a 100 MB binary, an in-memory <code dir="auto">Uint8Array</code> is fine: it’s about
 1% of a typical CI runner’s RAM budget.</li>
 </ul>
 <p>If your binary is much larger (&gt;1 GB), the public
