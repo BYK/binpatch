@@ -1,29 +1,94 @@
 name: Publish
-
 on:
-  release:
-    types: [published]
-  workflow_dispatch:
-
-permissions:
-  contents: read
-  id-token: write # OIDC trusted publishing to npm
+  issues:
+    types: [labeled]
 
 jobs:
   publish:
+    if: github.event.label.name == 'accepted' && github.event.issue.state == 'open'
     runs-on: ubuntu-latest
+    name: Publish release
+    environment: production
+    permissions:
+      contents: write
+      id-token: write
+      issues: write
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v5
+      - uses: actions/create-github-app-token@v3
+        id: app-token
         with:
-          node-version: "22"
-          registry-url: "https://registry.npmjs.org"
-          cache: npm
-      - run: npm ci
-      - run: npm run typecheck
-      - run: npm test
-      - run: npm run build
-      # Trusted publishing via OIDC — no NODE_AUTH_TOKEN needed once the package
-      # is linked to this workflow on npmjs.com. Requires npm >= 11.5.1.
-      - run: npm install -g npm@latest
-      - run: npm publish --provenance --access public
+          app-id: ${{ vars.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Parse publish request
+        id: inputs
+        env:
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+        run: |
+          # Title format: "publish: owner/repo@VERSION"
+          VERSION=$(echo "$ISSUE_TITLE" | grep -oP '@\K[^\s]+$')
+          if [[ -z "$VERSION" ]]; then
+            echo "::error::Could not parse version from issue title: $ISSUE_TITLE"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v6
+        with:
+          ref: release/${{ steps.inputs.outputs.version }}
+          token: ${{ steps.app-token.outputs.token }}
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Set git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      # `registry-url` is required for npm OIDC trusted publishing — without
+      # it, setup-node doesn't configure the authenticated .npmrc and
+      # `npm publish` (run by Craft under the hood) errors with ENEEDAUTH
+      # even though the workflow has `id-token: write` permission.
+      - uses: actions/setup-node@v6
+        with:
+          registry-url: 'https://registry.npmjs.org'
+
+      # Craft's OIDC trusted publishing requires npm >= 11.5.1, but the default
+      # runner Node (22.x) ships npm 10.x — upgrade explicitly. (Regression:
+      # this step was dropped in the Craft 2.26.9 bump assuming the default
+      # Node would already ship npm 11.x; it does not.)
+      - name: Upgrade npm for OIDC trusted publishing
+        run: sudo npm install -g npm@latest
+
+      # Pin to a specific Craft version to avoid upstream regressions.
+      - name: Install Craft
+        env:
+          CRAFT_VERSION: '2.26.9'
+        run: |
+          CRAFT_URL="https://github.com/getsentry/craft/releases/download/${CRAFT_VERSION}/craft"
+          sudo curl -fsSL -o /usr/local/bin/craft "$CRAFT_URL"
+          sudo chmod +x /usr/local/bin/craft
+
+      - name: Publish
+        run: craft publish "${{ steps.inputs.outputs.version }}" --no-input
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+
+      - name: Close issue on success
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue close "${{ github.event.issue.number }}" \
+            --comment "Published **${{ steps.inputs.outputs.version }}** successfully.
+          [Workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+
+      - name: Comment on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh issue comment "${{ github.event.issue.number }}" \
+            --body "Publish failed. [View workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})"
+          gh issue edit "${{ github.event.issue.number }}" --remove-label accepted
