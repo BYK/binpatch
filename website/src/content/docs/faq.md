@@ -6,9 +6,10 @@ Common questions about `binpatch`.
 
 ## Is `binpatch` production-ready?
 
-Yes. It's the apply/discovery core used by [`@loreai/gateway`](https://www.npmjs.com/package/@loreai/gateway)
-and [`sentry-cli`](https://github.com/getsentry/cli), both of which
-ship to thousands of users.
+Yes. It's the apply/discovery core extracted from
+[`sentry-cli`](https://github.com/getsentry/cli), which ships self-updates
+to millions of machines. It is also used by
+[`@loreai/gateway`](https://www.npmjs.com/package/@loreai/gateway).
 
 ## What patch format does it support?
 

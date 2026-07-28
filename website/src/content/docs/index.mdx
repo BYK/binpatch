@@ -1,9 +1,9 @@
 ---
 title: binpatch
-description: Reusable binary delta-update engine — TRDIFF10 apply, pluggable chain discovery, and a GitHub Action for end-to-end patch generation.
+description: Stop re-downloading the entire binary on every CLI update. binpatch generates and applies small binary delta patches — the same engine sentry-cli uses.
 template: splash
 hero:
-  tagline: Apply binary deltas in Node. Publish them from CI. Skip the megabytes.
+  tagline: Every CLI update re-downloads the whole binary. Most of it never changed. Patch only what moved.
   actions:
     - text: Get Started
       link: ./installation/
@@ -16,68 +16,108 @@ hero:
 
 import { Card, CardGrid } from "@astrojs/starlight/components";
 
-## What is binpatch?
+## The problem: your CLI is a giant blob
 
-`binpatch` is a small, well-typed library that **applies** binary delta patches
-in the [TRDIFF10](https://github.com/getsentry/cli) wire format, plus a thin
-**discovery** layer for locating patch chains in OCI registries or GitHub
-Releases, plus a **GitHub Action** that publishes them. It is the public,
-extracted core of the upgrade system used by the [`sentry-cli`](https://github.com/getsentry/cli)
-and [`@loreai/gateway`](https://www.npmjs.com/package/@loreai/gateway) binaries.
+You ship a 287&nbsp;MB binary. A bug fix lands. The user runs `mycli update`
+and pulls **another 287&nbsp;MB** — even though the fix touched a few hundred
+kilobytes. Repeat that across every release and every machine, and you are
+burning bandwidth and patience for bytes that haven't moved since the last
+build.
 
-You ship a 287 MB binary. A new release only changes a few hundred KB.
-Without deltas every user pays for the full download. With `binpatch`,
-each user downloads a 188 KB patch and your apply logic — patch chain
-discovery, integrity verification, OOM guarding, progress reporting —
-already wired up.
+The old binary and the new one are *almost identical*. A binary delta
+(compressed [bsdiff](https://www.daemonology.net/bsdiff/)) captures just the
+difference: typically **0.05–0.1%** of the full size. That 287&nbsp;MB update
+becomes a **~190&nbsp;KB patch**.
+
+## The catch: deltas need two halves
+
+A delta patch is useless without both:
+
+1. **Generation** — produce the patch from `old → new` in CI, and publish it
+   somewhere your users can find it.
+2. **Application** — discover the right patch(es) for a user's installed
+   version, download them, and reconstruct the new binary *safely* (integrity
+   checks, size caps, progress).
+
+Most projects hand-roll one half and skip the other. `binpatch` gives you
+**both**, as a small MIT-licensed TypeScript library plus a drop-in GitHub
+Action.
 
 <CardGrid stagger>
-  <Card title="Pure-Node apply" icon="rocket">
-    Apply TRDIFF10 patches in ~220 ms for a 310 MB diff (SWAR-vectorized).
-    No native bindings, no WASM, no external processes.
+  <Card title="Generate from CI" icon="rocket">
+    The <code>binpatch/generate</code> GitHub Action shells out to a pinned
+    bsdiff, produces one patch per platform, and publishes them to GHCR or
+    GitHub Releases — automatically, on every release.
   </Card>
-  <Card title="Pluggable discovery" icon="puzzle">
-    Ship a <code>SourceStrategy</code>, get a chain resolved. Built-in
-    <code>ghcrSource()</code> and <code>githubReleaseSource()</code> for
-    OCI registries and GitHub Releases.
+  <Card title="Apply in your binary" icon="puzzle">
+    <code>resolveAndApply()</code> discovers the patch chain for the user's
+    installed version, downloads only what's needed, and reconstructs the new
+    binary with SHA-256 verification and an OOM guard built in.
   </Card>
-  <Card title="Wire contract" icon="document">
-    TRDIFF10 patch format, OCI tag scheme (`<code>:nightly</code>`,
-    `<code>:patch-\{version\}</code>`), and `<code>sha256-\{binaryName\}</code>`
-    annotations — documented and stable.
+  <Card title="Same engine as sentry-cli" icon="approve-check">
+    This is the extracted, public core of the self-update system that
+    [sentry-cli](https://github.com/getsentry/cli) ships to millions of
+    machines. Battle-tested at scale, not a weekend experiment.
   </Card>
-  <Card title="Hardened by default" icon="approve-check">
-    SHA-256 verification on the final output. <code>MAX_OUTPUT_SIZE = 2 GiB</code>
-    cap on attacker-controlled <code>newSize</code>. Per-HTTP instrumentation hook
-    for your own tracing.
-  </Card>
-  <Card title="GitHub Action" icon="github">
-    Composite Action for end-to-end patch generation + publish. Drop it into
-    a workflow; it shells out to a pinned bsdiff and pushes to GHCR/Releases.
-  </Card>
-  <Card title="MIT licensed" icon="seti:license">
-    Free for commercial and non-commercial use. Vendoring allowed.
-    Source on GitHub, packages on npm.
+  <Card title="Pure Node, tiny" icon="seti:license">
+    No native bindings, no WASM, no shelled-out processes at apply time.
+    One ESM package, zero runtime dependencies beyond Node 22+.
   </Card>
 </CardGrid>
 
+## How an update actually flows
+
+```
+  your release (287 MB)          user's machine (old binary)
+        │                                  │
+        ▼                                  │
+  ┌─────────────────┐                      │
+  │ binpatch Action  │  CI: old → new      │
+  │ (bsdiff per arch)│  ───────────┐        │
+  └─────────────────┘             ▼        │
+                            patch (190 KB)  │
+                                  │         │
+                                  ▼         ▼
+                          ┌────────────────────────┐
+                          │  resolveAndApply()      │
+                          │  download · verify ·    │
+                          │  reconstruct new binary │
+                          └────────────────────────┘
+                                    │
+                                    ▼
+                          updated binary (287 MB, correct)
+```
+
+The user downloads kilobytes instead of megabytes. Your CI does the heavy
+lifting once.
+
 ## When to use binpatch
 
-Use it when you ship a self-updating binary and want to:
+- You ship a **self-updating CLI or agent binary** (the standard
+  `mycli update` story).
+- Your binary is **big enough that deltas pay off** — generally >50&nbsp;MB.
+- You want **generation and application handled**, not two half-solutions.
 
-- **Save your users bandwidth.** A 287 MB binary whose typical update
-  changes ~0.07% should not require a full re-download.
-- **Skip writing a discovery protocol yourself.** Plug in `ghcrSource()`
-  for nightly, `githubReleaseSource()` for stable — both resolve patch
-  chains against a target version.
-- **Match the wire format of a sister tool.** TRDIFF10 is what
-  [`sentry-cli`](https://github.com/getsentry/cli) and
-  [`@loreai/gateway`](https://www.npmjs.com/package/@loreai/gateway) speak.
+Do **not** reach for it when updates are source-level (use git, `npm update`),
+or when your binary is tiny (deltas only amortize at scale).
 
-Do **not** use it when:
+## Get started
 
-- Your updates are source-level (use git, `npm update`, etc.).
-- You can ship a small binary — deltas only amortize at >50 MB or so.
-- You need a Courgette-style executable-aware diff (this is plain bsdiff;
-  see the [Architecture page](./architecture/#why-not-courgette-style-executable-aware-diff)
-  for why).
+```bash
+npm install binpatch
+```
+
+Then either generate patches from CI with the
+[GitHub Action](./github-action/), or wire
+[`resolveAndApply`](./getting-started/) into your binary's update command.
+
+```ts
+import { resolveAndApply } from "binpatch";
+
+const result = await resolveAndApply({
+  currentVersion: "1.2.0",
+  targetVersion: "1.3.4",
+  source: ghcrSource({ repo: "myorg/mycli" }),
+});
+// result.destPath now holds the verified 1.3.4 binary; download was ~190 KB.
+```
