@@ -1,9 +1,9 @@
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
 
-// Allow base path override via env var for the site-deploy workflow's
-// PR previews (`/_preview/pr-<n>/binpatch/`). Production serves from
-// `/binpatch/` (subpath of the user's GitHub Pages domain).
+// Production serves from `/binpatch/` (subpath of the GitHub Pages domain).
+// PR previews are built under `/_preview/pr-<n>/binpatch/` to mirror the
+// pr-preview-action umbrella layout, so set DOCS_BASE_PATH there.
 const base = process.env.DOCS_BASE_PATH || "/binpatch/";
 
 export default defineConfig({
