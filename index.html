@@ -60,6 +60,11 @@ somewhere your users can find it.</li>
 version, download them, and reconstruct the new binary <em>safely</em> (integrity
 checks, size caps, progress).</li>
 </ol>
+<p>And if the user is <strong>several versions behind</strong>, they don’t get a single
+patch — they get a <em>chain</em> of patches (1.2.0 → 1.2.1 → 1.2.2 → 1.3.4).
+binpatch chains them automatically, downloads them in order, applies each
+hop, verifies the cumulative SHA-256, and falls back to a full download
+if any hop is missing or malformed.</p>
 <p>Most projects hand-roll one half and skip the other. <code dir="auto">binpatch</code> gives you
 <strong>both</strong>, as a small MIT-licensed TypeScript library plus a drop-in GitHub
 Action.</p>
