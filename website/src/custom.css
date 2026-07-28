@@ -2,18 +2,18 @@
    Warm "patch" palette: amber accent on near-black, with a teal secondary. */
 
 :root {
-  /* Brand palette */
-  --bp-amber: #ff9f1c;
-  --bp-amber-bright: #ffb74d;
-  --bp-teal: #2ec4b6;
+  /* Brand palette — amber tuned for contrast (WCAG AA on the paper bg). */
+  --bp-amber: #d97706;
+  --bp-amber-bright: #f59e0b;
+  --bp-teal: #0d9488;
   --bp-ink: #0b0d10;
   --bp-ink-2: #14171c;
   --bp-paper: #f7f5f0;
 
   /* Starlight light theme overrides */
-  --sl-color-accent-low: #fff3e0;
-  --sl-color-accent: #c97700;
-  --sl-color-accent-high: #5c3700;
+  --sl-color-accent-low: #fef3c7;
+  --sl-color-accent: #b45309;
+  --sl-color-accent-high: #78350f;
 
   --sl-color-text-accent: var(--bp-amber);
 
@@ -27,9 +27,9 @@
 }
 
 :root[data-theme="dark"] {
-  --sl-color-accent-low: #2a1c00;
-  --sl-color-accent: #ff9f1c;
-  --sl-color-accent-high: #ffd9a0;
+  --sl-color-accent-low: #451a03;
+  --sl-color-accent: #f59e0b;
+  --sl-color-accent-high: #fcd34d;
 
   --sl-color-text-accent: var(--bp-amber-bright);
 
@@ -70,9 +70,16 @@
   border: 1px solid var(--sl-color-gray-5);
 }
 
-/* Sidebar active item gets the brand accent */
+/* Sidebar active item — keep amber foreground (toned for contrast)
+   and add a left-bar marker so the active page stands out without
+   needing a heavy background fill. */
 .sidebar a[aria-current="page"] {
-  color: var(--bp-amber-bright);
+  color: var(--bp-amber);
+  background: transparent !important;
+  border-left: 2px solid var(--bp-amber);
+  border-radius: 0;
+  padding-left: calc(var(--sl-sidebar-pad-x, 1rem) - 2px);
+  font-weight: 600;
 }
 
 .site-title {

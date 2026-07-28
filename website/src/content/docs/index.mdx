@@ -41,9 +41,9 @@ A delta patch is useless without both:
 
 And if the user is **several versions behind**, they don't get a single
 patch — they get a *chain* of patches (1.2.0 → 1.2.1 → 1.2.2 → 1.3.4).
-binpatch chains them automatically, downloads them in order, applies each
-hop, verifies the cumulative SHA-256, and falls back to a full download
-if any hop is missing or malformed.
+binpatch chains them automatically, downloads them **in parallel**, applies
+each hop **in order**, verifies the cumulative SHA-256, and falls back to
+a full download if any hop is missing or malformed.
 
 Most projects hand-roll one half and skip the other. `binpatch` gives you
 **both**, as a small MIT-licensed TypeScript library plus a drop-in GitHub
