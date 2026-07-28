@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, "release/*"]
   pull_request:
 
 permissions:
@@ -29,7 +29,7 @@ jobs:
   pack:
     runs-on: ubuntu-latest
     name: Build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release/'))
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v5
