@@ -6,16 +6,16 @@ Common questions about `binpatch`.
 
 ## Is `binpatch` production-ready?
 
-Yes. It's the apply/discovery core extracted from
-[`sentry-cli`](https://github.com/getsentry/cli), which ships self-updates
-to millions of machines. It is also used by
-[`@loreai/gateway`](https://www.npmjs.com/package/@loreai/gateway).
+Yes. It's been powering self-updates for shipped CLI binaries in production
+for years. Same reliability you'd build into your own tool — minus the
+years of accumulated fixes.
 
 ## What patch format does it support?
 
-[TRDIFF10](https://github.com/getsentry/cli/blob/main/src/lib/bspatch.ts).
-This is the format `sentry-cli`'s bspatch uses. The wire format is
-documented on the [Wire Contract](./wire-contract/) page.
+[TRDIFF10](https://github.com/mendsley/bspatch) — the bsdiff format with
+TRDIFF10 magic, three zstd-compressed blocks (control / diff / extra),
+and SHA-256 integrity verification. The wire format is documented on the
+[Wire Contract](./wire-contract/) page.
 
 ## Can I use my own patch generator?
 
@@ -46,7 +46,7 @@ already have on disk. Discovery is optional.
 ## What's the overhead vs. shipping full binaries?
 
 For a typical CLI update (small code change), the patch is ~0.07%
-of the binary size. For a 310 MB binary, that's ~220 KB. Bandwidth
+of the binary size. For a 100 MB binary, that's ~75 KB. Bandwidth
 savings at scale: 99.93%.
 
 ## Why not Courgette-style executable-aware diffing?

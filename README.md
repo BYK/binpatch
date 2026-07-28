@@ -18,10 +18,10 @@ npm install binpatch
 ## Why
 
 Every time you `mycli update`, you pull the **entire binary again** — even when
-the new release changed a few hundred kilobytes of a 287&nbsp;MB file. That's
+the new release changed a few hundred kilobytes of a 100&nbsp;MB file. That's
 bandwidth and patience burned on bytes that didn't move. A binary delta (bsdiff)
 between consecutive builds is typically **0.05–0.1%** of the full size, so that
-287&nbsp;MB download becomes a ~190&nbsp;KB patch.
+100&nbsp;MB download becomes a ~190&nbsp;KB patch.
 
 The hard part isn't making the patch — it's the **two halves** that most
 projects hand-roll separately (and get wrong):
@@ -32,9 +32,9 @@ projects hand-roll separately (and get wrong):
 
 `binpatch` gives you **both** as one MIT-licensed TypeScript library plus a
 drop-in GitHub Action. It's the apply/discovery core extracted from
-[`sentry-cli`](https://github.com/getsentry/cli) — the same engine that ships
-self-updates to millions of machines — so it's battle-tested, not a weekend
-experiment.
+Powers self-updates in production for several shipped CLI binaries serving
+millions of installs. Battle-tested reliability — minus the years of
+accumulated fixes you'd otherwise have to write yourself.
 
 ## Scope
 

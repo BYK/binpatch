@@ -1,6 +1,6 @@
 ---
 title: binpatch
-description: Stop re-downloading the entire binary on every CLI update. binpatch generates and applies small binary delta patches — the same engine sentry-cli uses.
+description: Stop re-downloading the entire binary on every CLI update. binpatch generates and applies small binary delta patches for self-updating command-line tools.
 template: splash
 hero:
   tagline: Every CLI update re-downloads the whole binary. Most of it never changed. Patch only what moved.
@@ -18,15 +18,15 @@ import { Card, CardGrid } from "@astrojs/starlight/components";
 
 ## The problem: your CLI is a giant blob
 
-You ship a 287&nbsp;MB binary. A bug fix lands. The user runs `mycli update`
-and pulls **another 287&nbsp;MB** — even though the fix touched a few hundred
+You ship a 100&nbsp;MB binary. A bug fix lands. The user runs `mycli update`
+and pulls **another 100&nbsp;MB** — even though the fix touched a few hundred
 kilobytes. Repeat that across every release and every machine, and you are
 burning bandwidth and patience for bytes that haven't moved since the last
 build.
 
 The old binary and the new one are *almost identical*. A binary delta
 (compressed [bsdiff](https://www.daemonology.net/bsdiff/)) captures just the
-difference: typically **0.05–0.1%** of the full size. That 287&nbsp;MB update
+difference: typically **0.05–0.1%** of the full size. That 100&nbsp;MB update
 becomes a **~190&nbsp;KB patch**.
 
 ## The catch: deltas need two halves
@@ -54,10 +54,10 @@ Action.
     installed version, downloads only what's needed, and reconstructs the new
     binary with SHA-256 verification and an OOM guard built in.
   </Card>
-  <Card title="Same engine as sentry-cli" icon="approve-check">
-    This is the extracted, public core of the self-update system that
-    [sentry-cli](https://github.com/getsentry/cli) ships to millions of
-    machines. Battle-tested at scale, not a weekend experiment.
+  <Card title="Battle-tested at scale" icon="approve-check">
+    Powers self-updates in production for several shipped CLI binaries
+    serving millions of installs. Same reliability you'd build into your
+    own tool — minus the years of accumulated fixes.
   </Card>
   <Card title="Pure Node, tiny" icon="seti:license">
     No native bindings, no WASM, no shelled-out processes at apply time.
@@ -68,24 +68,25 @@ Action.
 ## How an update actually flows
 
 ```
-  your release (287 MB)          user's machine (old binary)
-        │                                  │
-        ▼                                  │
-  ┌─────────────────┐                      │
-  │ binpatch Action  │  CI: old → new      │
-  │ (bsdiff per arch)│  ───────────┐        │
-  └─────────────────┘             ▼        │
-                            patch (190 KB)  │
-                                  │         │
-                                  ▼         ▼
-                          ┌────────────────────────┐
-                          │  resolveAndApply()      │
-                          │  download · verify ·    │
-                          │  reconstruct new binary │
-                          └────────────────────────┘
-                                    │
-                                    ▼
-                          updated binary (287 MB, correct)
+   CI                                user's machine
+ ──────                              ───────────────
+  old binary (100 MB)
+       │
+       ▼
+  ┌──────────────────────┐
+  │ binpatch Action (CI) │   new binary (100 MB)
+  │ bsdiff old → new     │ ──────────────────────►
+  └──────────────────────┘
+           │
+           ▼
+      patch (70 KB)   ────────────────────────►  ┌──────────────────────────┐
+                                                     │ resolveAndApply()         │
+                                                     │ download · verify ·       │
+                                                     │ reconstruct new binary    │
+                                                     └──────────────────────────┘
+                                                                │
+                                                                ▼
+                                                  installed binary (100 MB)
 ```
 
 The user downloads kilobytes instead of megabytes. Your CI does the heavy
@@ -107,9 +108,11 @@ or when your binary is tiny (deltas only amortize at scale).
 npm install binpatch
 ```
 
-Then either generate patches from CI with the
-[GitHub Action](./github-action/), or wire
-[`resolveAndApply`](./getting-started/) into your binary's update command.
+Then **both**: generate patches from CI with the
+[GitHub Action](./github-action/) (so nightly builds push to GHCR and stable
+releases push to GitHub Releases), *and* wire
+[`resolveAndApply`](./getting-started/) into your binary's update command
+to discover and apply them.
 
 ```ts
 import { resolveAndApply } from "binpatch";
@@ -119,5 +122,5 @@ const result = await resolveAndApply({
   targetVersion: "1.3.4",
   source: ghcrSource({ repo: "myorg/mycli" }),
 });
-// result.destPath now holds the verified 1.3.4 binary; download was ~190 KB.
+// result.destPath now holds the verified 1.3.4 binary; download was ~70 KB.
 ```

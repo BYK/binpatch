@@ -114,8 +114,8 @@ await resolveAndApply({
 ### Multi-hop apply total
 
 For a multi-hop chain, `event.total` for the `apply` phase is the
-**sum of `newSize` across all hops**. A 3-hop chain of 310 MB
-binaries will report `total: 930 MB`. Display this as a percentage
+**sum of `newSize` across all hops**. A 3-hop chain of 100 MB
+binaries will report `total: 300 MB`. Display this as a percentage
 of the final binary size, not bytes — most users want "how far
 along?" not "how much data has the apply read?".
 
