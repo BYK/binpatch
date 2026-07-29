@@ -114,28 +114,31 @@ subtly-wrong results for ~52% of byte values. A <code dir="auto">byteOffset % 4<
 alignment guard falls back to the byte loop when the buffer is not
 4-byte aligned — keeps the SWAR fast path safe.</p>
 <div class="sl-heading-wrapper level-h2"><h2 id="apply-why-not-courgette-style-executable-aware-diffing">Apply: why not Courgette-style executable-aware diffing?</h2><a class="sl-anchor-link" href="#apply-why-not-courgette-style-executable-aware-diffing"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Apply: why not Courgette-style executable-aware diffing?”</span></a></div>
-<p><a href="https://chromium.googlesource.com/chromium/src/+/master/components/courgette/README.md">Courgette</a>
-normalizes pointer relocations in machine code before diffing, which
-gives Chrome ~10× patch-size wins on full Chromium updates. We do
-not use it because:</p>
+<p>Courgette was a Chromium component that normalized pointer relocations
+in machine code before diffing, giving Chrome substantial patch-size
+wins on full Chromium updates. It has since been retired; the live
+successor is <a href="https://chromium.googlesource.com/chromium/src/+/main/components/zucchini/README.md">Zucchini</a>.
+We do not use either because:</p>
 <ul>
 <li>The bsdiff seek mechanism already collapses most pointer churn
-into small seek distances. We measured: a 100 MB binary with
-constant <code dir="auto">-605 byte</code> offset shift in the bundled JS payload
-produces a 189 KB patch — that’s 0.066% of the binary.</li>
-<li>Courgette requires understanding the executable format in detail
-(PE/ELF/Mach-O + relocations). Supporting all three platforms
-we ship for (linux/darwin/windows) would multiply maintenance cost.</li>
+into small seek distances. For our use case the bulk of the binary
+is a JS snapshot, which has little of the native-code relocation
+churn that Courgette/Zucchini target — so the normalization step
+has little to bite on.</li>
+<li>Courgette/Zucchini require understanding the executable format in
+detail (PE/ELF/Mach-O + relocations). Supporting all three
+platforms we ship for (linux/darwin/windows) would multiply
+maintenance cost.</li>
 <li>For our use case the bottleneck is full-download fallback latency,
-not patch size. A 189 KB patch vs a 50 KB patch is a ~3 second
-difference at normal network speeds, not a “the user waited 30
-seconds for a full download” difference.</li>
+not patch size. Patch download is small; the cost is the cold
+path when no chain is available.</li>
 </ul>
-<p>If you have small enough binaries that even the bsdiff patch is
-size-bottlenecked (sub-100 MB), or you ship embedded native code with
-heavy relocation churn, consider Courgette. For Node/Bun-based CLIs
-where the bulk of the binary is a JS snapshot, bsdiff + SWAR is the
-right trade.</p>
+<p>If you ship embedded native code with heavy relocation churn, or your
+binary is small enough that even the bsdiff patch is the bottleneck,
+consider <a href="https://chromium.googlesource.com/chromium/src/+/main/components/zucchini/README.md">Zucchini</a>
+or <a href="https://github.com/mendsley/bsdiff">bsdiff-mantissa</a>. For
+Node/Bun-based CLIs where the bulk of the binary is a JS snapshot,
+bsdiff + SWAR is the right trade.</p>
 <div class="sl-heading-wrapper level-h2"><h2 id="apply-why-no-native-code">Apply: why no native code?</h2><a class="sl-anchor-link" href="#apply-why-no-native-code"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Apply: why no native code?”</span></a></div>
 <p>We considered bundling a native <code dir="auto">mmap</code>-based reader for the old binary
 to avoid loading it fully into RAM. We chose not to because:</p>
