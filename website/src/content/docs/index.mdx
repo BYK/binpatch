@@ -73,27 +73,7 @@ Action.
 
 ## How an update actually flows
 
-```
-   CI                                user's machine
- ──────                              ───────────────
-  old binary (100 MB)
-       │
-       ▼
-  ┌──────────────────────┐
-  │ binpatch Action (CI) │   new binary (100 MB)
-  │ bsdiff old → new     │ ──────────────────────►
-  └──────────────────────┘
-           │
-           ▼
-      patch (70 KB)   ────────────────────────►  ┌──────────────────────────┐
-                                                     │ resolveAndApply()         │
-                                                     │ download · verify ·       │
-                                                     │ reconstruct new binary    │
-                                                     └──────────────────────────┘
-                                                                │
-                                                                ▼
-                                                  installed binary (100 MB)
-```
+![How an update flows: CI produces patches from the old binary, publishes them to a registry, the user's binary downloads them in parallel and applies them in order to reconstruct the new binary.](/flow.svg)
 
 The user downloads kilobytes instead of megabytes. Your CI does the heavy
 lifting once.
