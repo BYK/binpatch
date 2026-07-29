@@ -15,7 +15,7 @@ years of accumulated fixes.
 [TRDIFF10](https://github.com/mendsley/bspatch) — the bsdiff format with
 TRDIFF10 magic, three zstd-compressed blocks (control / diff / extra),
 and SHA-256 integrity verification. The wire format is documented on the
-[Wire Contract](./wire-contract/) page.
+[Wire Contract](/wire-contract/) page.
 
 ## Can I use my own patch generator?
 
@@ -51,7 +51,7 @@ savings at scale: 99.93%.
 
 ## Why not Courgette-style executable-aware diffing?
 
-See the [Architecture →](./architecture/#why-not-courgette-style-executable-aware-diff)
+See the [Architecture →](/architecture/#why-not-courgette-style-executable-aware-diff)
 page. Short answer: for our use case (Node/Bun-based CLIs where the
 bulk of the binary is a JS snapshot), bsdiff already crushes pointer
 churn via its seek mechanism, and the rest of the binary is too
@@ -59,14 +59,14 @@ small for executable-aware diffing to matter.
 
 ## Why no native code?
 
-See [Architecture →](./architecture/#apply-why-no-native-code).
+See [Architecture →](/architecture/#apply-why-no-native-code).
 Briefly: mmap-based readers break esbuild + Node SEA bundling, and
 in-memory apply is fast enough for typical binaries.
 
 ## How do I integrate this into my own CI?
 
-See [CI integration →](./ci-integration/) for a complete example,
-or use the bundled [GitHub Action →](./github-action/) for the
+See [CI integration →](/ci-integration/) for a complete example,
+or use the bundled [GitHub Action →](/github-action/) for the
 end-to-end generate-and-publish flow.
 
 ## What's the npm package name?
@@ -104,7 +104,7 @@ escape hatch lets you inject Bun-native `fetch` if needed.
 ## Can I use my own registry (not GHCR, not GitHub Releases)?
 
 Yes. Implement `SourceStrategy` directly — see
-[Discovering chains →](./discover/#custom-sources). A 30-line
+[Discovering chains →](/discover/#custom-sources). A 30-line
 custom source is enough for most bespoke registries.
 
 ## How is the project released?
@@ -123,10 +123,10 @@ wrapped in a 10-second request timeout (30 seconds for blob
 downloads). If your `fetch` doesn't honor `AbortSignal.timeout(...)`,
 the library's timeout wrapper won't fire.
 
-See [Custom fetch / CA →](./custom-fetch/#timeout-semantics).
+See [Custom fetch / CA →](/custom-fetch/#timeout-semantics).
 
 ## Where can I get help?
 
 - Open an [issue](https://github.com/BYK/binpatch/issues)
 - Search [discussions](https://github.com/BYK/binpatch/discussions)
-- For security issues, see [Contributing →](./contributing/#security-disclosures)
+- For security issues, see [Contributing →](/contributing/#security-disclosures)

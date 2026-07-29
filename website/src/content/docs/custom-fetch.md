@@ -156,5 +156,5 @@ your own polyfill.
 
 ## Next
 
-- [Progress & events →](./progress/) — `ProgressEvent` lifecycle
-- [Discovering chains →](./discover/) — `SourceStrategy` interface
+- [Progress & events →](/progress/) — `ProgressEvent` lifecycle
+- [Discovering chains →](/discover/) — `SourceStrategy` interface

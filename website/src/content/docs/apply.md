@@ -118,7 +118,7 @@ applyPatchChainInMemory(oldPath, chain, destPath, (bytes) => {
 This is a low-level callback for the per-chunk apply loop. For
 lifecycle events (resolve / apply / verify) and cumulative
 `{ written, total }` updates, use `resolveAndApply`'s `ProgressEvent`
-stream instead — see [Progress & events](./progress/).
+stream instead — see [Progress & events](/progress/).
 
 ## Performance
 
@@ -138,6 +138,6 @@ dominated by extra-block writes, where the speedup is smaller
 
 ## Next
 
-- [Progress & events →](./progress/) — `ProgressEvent` lifecycle
-- [Discovering chains →](./discover/) — when you want the library to fetch patches
-- [Custom fetch / CA →](./custom-fetch/) — TLS / proxy configuration
+- [Progress & events →](/progress/) — `ProgressEvent` lifecycle
+- [Discovering chains →](/discover/) — when you want the library to fetch patches
+- [Custom fetch / CA →](/custom-fetch/) — TLS / proxy configuration

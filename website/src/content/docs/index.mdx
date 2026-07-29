@@ -6,7 +6,7 @@ hero:
   tagline: Every CLI update re-downloads the whole binary. Most of it never changed. Patch only what moved.
   actions:
     - text: Get Started
-      link: ./installation/
+      link: /installation/
       icon: right-arrow
     - text: View on GitHub
       link: https://github.com/BYK/binpatch
@@ -109,9 +109,9 @@ npm install binpatch
 ```
 
 Then **both**: generate patches from CI with the
-[GitHub Action](./github-action/) (so nightly builds push to GHCR and stable
+[GitHub Action](/github-action/) (so nightly builds push to GHCR and stable
 releases push to GitHub Releases), *and* wire
-[`resolveAndApply`](./getting-started/) into your binary's update command
+[`resolveAndApply`](/getting-started/) into your binary's update command
 to discover and apply them.
 
 ```ts

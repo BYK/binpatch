@@ -39,7 +39,7 @@ result (success or rejection). The library calls it as
 import { ghcrSource } from "binpatch";
 // `withTracing` is *your* telemetry module — the library doesn't ship one.
 // Wrap each instrumented step however your SDK expects.
-import { withTracing } from "./telemetry.js";
+import { withTracing } from "/telemetry.js";
 
 const instrument: InstrumentHook = (name, fn) =>
   withTracing(name, "http.client", fn);
@@ -149,5 +149,5 @@ const source = ghcrSource({ /* ..., */ instrument });
 
 ## Next
 
-- [Progress & events →](./progress/) — `ProgressEvent` lifecycle
-- [Discovering chains →](./discover/) — `SourceStrategy` interface
+- [Progress & events →](/progress/) — `ProgressEvent` lifecycle
+- [Discovering chains →](/discover/) — `SourceStrategy` interface

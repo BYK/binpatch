@@ -202,6 +202,6 @@ expire after 7 days (use `cache.cleanup()` to evict).
 
 ## Next
 
-- [Progress & events →](./progress/) — observe `resolveAndApply` step-by-step
-- [Custom fetch / CA →](./custom-fetch/) — pass your TLS config to OCI/GitHub calls
-- [Architecture →](./architecture/) — why pluggable discovery
+- [Progress & events →](/progress/) — observe `resolveAndApply` step-by-step
+- [Custom fetch / CA →](/custom-fetch/) — pass your TLS config to OCI/GitHub calls
+- [Architecture →](/architecture/) — why pluggable discovery

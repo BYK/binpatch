@@ -65,5 +65,5 @@ binpatch
 
 ## Next
 
-- [Quickstart →](./getting-started/) — first patch applied in 30 lines
-- [Wire Contract →](./wire-contract/) — the file format and OCI tag scheme
+- [Quickstart →](/getting-started/) — first patch applied in 30 lines
+- [Wire Contract →](/wire-contract/) — the file format and OCI tag scheme

@@ -213,5 +213,5 @@ This is defense-in-depth: even if a stray file somehow lands in
 
 ## Next
 
-- [Library integration →](./ci-integration/) — using `binpatch` as a library in your own upgrade pipeline
-- [Wire Contract →](./wire-contract/) — the file format
+- [Library integration →](/ci-integration/) — using `binpatch` as a library in your own upgrade pipeline
+- [Wire Contract →](/wire-contract/) — the file format
