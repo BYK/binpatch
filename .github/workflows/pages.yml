@@ -41,6 +41,13 @@ jobs:
         working-directory: website
         run: npm run build
 
+      - name: Upload built site for the link-check job
+        uses: actions/upload-artifact@v5
+        with:
+          name: website-dist
+          path: website/dist/
+          retention-days: 1
+
       - name: Ensure .nojekyll at gh-pages root
         run: |
           git config user.name "github-actions[bot]"
@@ -85,6 +92,15 @@ jobs:
     needs: build
     steps:
       - uses: actions/checkout@v6
+
+      # The build job uploads the dist/ as an artifact; pull it down
+      # here so we can link-check it. link-check runs in its own
+      # checkout — dist/ doesn't exist in this workspace otherwise.
+      - name: Download built site
+        uses: actions/download-artifact@v5
+        with:
+          name: website-dist
+          path: website/dist/
 
       # untitaker/hyperlink: fast Rust-based static-site link checker.
       # Does not make network calls — it walks the static files on disk
