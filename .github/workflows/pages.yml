@@ -86,51 +86,18 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - uses: actions/setup-node@v5
+      # untitaker/hyperlink: fast Rust-based static-site link checker.
+      # It does not make network calls, so it never flakes on outbound
+      # links. Exit code 1 = hard 404s, exit code 2 = broken anchors
+      # only (we treat both as failures to keep the docs clean).
+      - name: Find broken internal links
+        uses: untitaker/hyperlink@v0.3.2
         with:
-          node-version: "22"
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install hyperlink
-        run: python -m pip install --user hyperlink
-
-      - name: Find broken internal links in dist/
-        # --internal-only: only follow same-origin links (the docs
-        # site is what we control); --skip-fragment: ignore #anchors
-        # (we don't generate static ids for every section).
-        run: |
-          python -m hyperlink \
-            --internal-only \
-            --skip-fragment \
-            website/dist/index.html \
-            website/dist/architecture/index.html \
-            website/dist/apply/index.html \
-            website/dist/discover/index.html \
-            website/dist/getting-started/index.html \
-            website/dist/installation/index.html \
-            website/dist/github-action/index.html \
-            website/dist/ci-integration/index.html \
-            website/dist/custom-fetch/index.html \
-            website/dist/telemetry/index.html \
-            website/dist/progress/index.html \
-            website/dist/faq/index.html \
-            website/dist/security/index.html \
-            website/dist/contributing/index.html \
-            > link-check.json
-          cat link-check.json
-          # hyperlink exits non-zero only on tool errors; failures go
-          # to stdout. Fail the job if any 4xx/5xx result was found.
-          if grep -q '"result":.*\(4[0-9][0-9]\|5[0-9][0-9]\)' link-check.json; then
-            echo "::error::Broken internal links found (see link-check.json)"
-            exit 1
-          fi
+          args: website/dist/
 
       - uses: actions/upload-artifact@v5
         if: always()
         with:
           name: link-check-report
-          path: link-check.json
+          path: artifact/
           retention-days: 7
