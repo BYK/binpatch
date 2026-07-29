@@ -65,6 +65,23 @@ jobs:
           PR_NUMBER: ${{ github.event.number }}
           DOCS_BASE_PATH: /_preview/pr-${{ github.event.number }}/
 
+      # Run the link-checker on the built dist/. Catches broken internal
+      # links (e.g. a typo in a Starlight pagination URL) before the PR
+      # can be merged. Mapping errors back to the markdown source makes
+      # them show up inline in the PR diff via --github-actions.
+      #
+      # We skip `closed` events because the dist for the cleanup step
+      # is the live site, not the PR's preview — and the cleanup run
+      # doesn't need a fresh build.
+      - name: Check internal links
+        if: >-
+          github.event.action != 'closed' &&
+          steps.filter.outputs.website == 'true' &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        uses: untitaker/hyperlink@0.3.2
+        with:
+          args: website/dist/ --sources website/src/content/ --github-actions
+
       - name: Deploy PR Preview
         if: >-
           (github.event.action == 'closed' || steps.filter.outputs.website == 'true') &&
