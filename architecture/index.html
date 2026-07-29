@@ -140,7 +140,7 @@ right trade.</p>
 <p>We considered bundling a native <code dir="auto">mmap</code>-based reader for the old binary
 to avoid loading it fully into RAM. We chose not to because:</p>
 <ul>
-<li>Bun’s native mmap is unavailable — we migrated off Bun.</li>
+<li><code dir="auto">mmap</code> via <code dir="auto">bun:ffi</code> is not yet portable across the runtimes this library targets (Node and Bun).</li>
 <li><code dir="auto">mmap-io</code> and similar native addons break esbuild + Node SEA
 bundling, which several shipped CLI consumers rely on.</li>
 <li>For a 100 MB binary, an in-memory <code dir="auto">Uint8Array</code> is fine: it’s about
