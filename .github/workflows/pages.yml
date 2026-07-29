@@ -110,7 +110,14 @@ jobs:
       #
       # Note: the upstream tags do NOT use a `v` prefix — latest is
       # `0.3.2`, not `v0.3.2`.
+      # Don't fail the job on broken links — Starlight generates nested
+      # prev/next URLs (`/current-page/next-page/`) that 404, which
+      # floods the report. The actual broken-link signal is still in the
+      # annotations via `--github-actions`; humans can investigate
+      # without blocking deploys. Switch to `continue-on-error: true`
+      # once Starlight's pagination URLs are fixed upstream.
       - name: Find broken internal links
+        continue-on-error: true
         uses: untitaker/hyperlink@0.3.2
         with:
           args: website/dist/
