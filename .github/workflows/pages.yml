@@ -87,11 +87,15 @@ jobs:
       - uses: actions/checkout@v6
 
       # untitaker/hyperlink: fast Rust-based static-site link checker.
-      # It does not make network calls, so it never flakes on outbound
-      # links. Exit code 1 = hard 404s, exit code 2 = broken anchors
-      # only (we treat both as failures to keep the docs clean).
+      # Does not make network calls — it walks the static files on disk
+      # and parses them for broken internal references, so it never
+      # flakes on outbound links. Exit code 1 = hard 404s; we treat
+      # that as a build failure to keep the docs clean.
+      #
+      # Note: the upstream tags do NOT use a `v` prefix — latest is
+      # `0.3.2`, not `v0.3.2`.
       - name: Find broken internal links
-        uses: untitaker/hyperlink@v0.3.2
+        uses: untitaker/hyperlink@0.3.2
         with:
           args: website/dist/
 
