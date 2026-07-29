@@ -61,28 +61,31 @@ alignment guard falls back to the byte loop when the buffer is not
 
 ## Apply: why not Courgette-style executable-aware diffing?
 
-[Courgette](https://chromium.googlesource.com/chromium/src/+/master/components/courgette/README.md)
-normalizes pointer relocations in machine code before diffing, which
-gives Chrome ~10× patch-size wins on full Chromium updates. We do
-not use it because:
+Courgette was a Chromium component that normalized pointer relocations
+in machine code before diffing, giving Chrome substantial patch-size
+wins on full Chromium updates. It has since been retired; the live
+successor is [Zucchini](https://chromium.googlesource.com/chromium/src/+/main/components/zucchini/README.md).
+We do not use either because:
 
 - The bsdiff seek mechanism already collapses most pointer churn
-  into small seek distances. We measured: a 100 MB binary with
-  constant `-605 byte` offset shift in the bundled JS payload
-  produces a 189 KB patch — that's 0.066% of the binary.
-- Courgette requires understanding the executable format in detail
-  (PE/ELF/Mach-O + relocations). Supporting all three platforms
-  we ship for (linux/darwin/windows) would multiply maintenance cost.
+  into small seek distances. For our use case the bulk of the binary
+  is a JS snapshot, which has little of the native-code relocation
+  churn that Courgette/Zucchini target — so the normalization step
+  has little to bite on.
+- Courgette/Zucchini require understanding the executable format in
+  detail (PE/ELF/Mach-O + relocations). Supporting all three
+  platforms we ship for (linux/darwin/windows) would multiply
+  maintenance cost.
 - For our use case the bottleneck is full-download fallback latency,
-  not patch size. A 189 KB patch vs a 50 KB patch is a ~3 second
-  difference at normal network speeds, not a "the user waited 30
-  seconds for a full download" difference.
+  not patch size. Patch download is small; the cost is the cold
+  path when no chain is available.
 
-If you have small enough binaries that even the bsdiff patch is
-size-bottlenecked (sub-100 MB), or you ship embedded native code with
-heavy relocation churn, consider Courgette. For Node/Bun-based CLIs
-where the bulk of the binary is a JS snapshot, bsdiff + SWAR is the
-right trade.
+If you ship embedded native code with heavy relocation churn, or your
+binary is small enough that even the bsdiff patch is the bottleneck,
+consider [Zucchini](https://chromium.googlesource.com/chromium/src/+/main/components/zucchini/README.md)
+or [bsdiff-mantissa](https://github.com/mendsley/bsdiff). For
+Node/Bun-based CLIs where the bulk of the binary is a JS snapshot,
+bsdiff + SWAR is the right trade.
 
 ## Apply: why no native code?
 
