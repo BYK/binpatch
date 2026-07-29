@@ -13,7 +13,7 @@ Action. Pure Node, zero product coupling.
 npm install binpatch
 ```
 
-**Docs:** https://byk.github.io/binpatch/ · **Source:** https://github.com/BYK/binpatch
+**Docs:** https://binpatch.p.byk.im/ · **Source:** https://github.com/BYK/binpatch
 
 ## Why
 
