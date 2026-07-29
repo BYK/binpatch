@@ -65,9 +65,10 @@ Action.
     already be using. Same reliability you'd build into your own tool —
     minus the years of accumulated fixes.
   </Card>
-  <Card title="Pure Node, tiny" icon="seti:license">
-    No native bindings, no WASM, no shelled-out processes at apply time.
-    One ESM package, zero runtime dependencies beyond Node 22+.
+  <Card title="Pure TS, no runtime dependencies" icon="seti:license">
+    Pure TypeScript — no native bindings, no WASM, no shelled-out processes
+    at apply time. One ESM package, zero `dependencies` (uses Node 22+ built-ins
+    like `node:fs`, `node:zlib`, `node:crypto`).
   </Card>
 </CardGrid>
 
@@ -81,7 +82,20 @@ lifting once.
 ## When to use binpatch
 
 - You ship a **self-updating CLI or agent binary** (the standard
-  `mycli update` story).
+  `mycli update` story) — especially if it's a single-file artifact
+  produced by one of:
+  - **[Bun](https://bun.com/docs/bundler/fullstack#single-file-executable)
+    (`bun build --compile`)** — embed a JS/TS entry into a standalone executable.
+  - **[Deno](https://docs.deno.com/runtime/reference/cli/compile/) (`deno compile`)** —
+    Deno's equivalent of Bun's `--compile`.
+  - **[Node SEA](https://nodejs.org/api/single-executable-applications.html)**
+    (`node --experimental-sea-config` + `node --build`) — freeze a Node binary
+    with your app's prepended scripts.
+  - **[yao-pkg / @yao-pkg/pkg](https://yao-pkg.github.io/pkg/)** — ship a
+    virtual filesystem as a Node fork.
+  - **esbuild `--bundle`** feeding one of the above.
+  - **[Fossilize](https://github.com/GoogleChromeLabs/fossilize) + Demo** for
+    native code with an embedded V8 snapshot.
 - Your binary is **big enough that deltas pay off** — generally >50&nbsp;MB.
 - You want **generation and application handled**, not two half-solutions.
 
