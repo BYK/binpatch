@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 260" font-family="ui-sans-serif, -apple-system, 'Segoe UI', sans-serif" role="img" aria-label="How an update flows: CI produces patches from the old binary, publishes them to a registry, the user's binary discovers and downloads them in parallel, then applies them in order to reconstruct the new binary.">
+  <defs>
+    <marker id="arr-home" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+    </marker>
+  </defs>
+
+  <!-- CI column label -->
+  <text x="100" y="40" font-size="12" fill="currentColor" opacity="0.7">CI</text>
+  <line x1="40" y1="50" x2="160" y2="50" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+
+  <!-- User column label -->
+  <text x="380" y="40" font-size="12" fill="currentColor" opacity="0.7">user's machine</text>
+  <line x1="280" y1="50" x2="480" y2="50" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+
+  <!-- old binary label -->
+  <text x="100" y="80" text-anchor="middle" font-size="13" fill="currentColor">old binary (100 MB)</text>
+
+  <!-- binpatch Action box -->
+  <rect x="40" y="110" width="220" height="60" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="150" y="135" text-anchor="middle" font-size="14" fill="currentColor">binpatch Action (CI)</text>
+  <text x="150" y="156" text-anchor="middle" font-size="12" fill="currentColor" opacity="0.7">bsdiff old → new</text>
+
+  <!-- patch label -->
+  <text x="150" y="200" text-anchor="middle" font-size="13" fill="currentColor">patch (70 KB)</text>
+
+  <!-- arrow down CI side -->
+  <line x1="150" y1="88" x2="150" y2="105" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr-home)"/>
+  <line x1="150" y1="170" x2="150" y2="185" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr-home)"/>
+
+  <!-- arrow to user side: patch transfer -->
+  <line x1="260" y1="195" x2="380" y2="130" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr-home)"/>
+  <text x="320" y="155" text-anchor="middle" font-size="11" fill="currentColor" opacity="0.7">over the wire</text>
+
+  <!-- resolveAndApply box -->
+  <rect x="380" y="100" width="280" height="60" rx="8" fill="none" stroke="currentColor" stroke-width="1.5"/>
+  <text x="520" y="128" text-anchor="middle" font-size="14" fill="currentColor">resolveAndApply()</text>
+  <text x="520" y="148" text-anchor="middle" font-size="12" fill="currentColor" opacity="0.7">download (parallel) → apply (ordered)</text>
+
+  <!-- arrow down to installed binary -->
+  <line x1="520" y1="160" x2="520" y2="200" stroke="currentColor" stroke-width="1.5" marker-end="url(#arr-home)"/>
+
+  <!-- installed binary -->
+  <text x="520" y="226" text-anchor="middle" font-size="13" fill="currentColor">installed binary (100 MB)</text>
+</svg>
