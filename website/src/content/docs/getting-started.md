@@ -100,7 +100,7 @@ on success is `{ sha256, patchBytes, chainLength }`.
 
 ## Next
 
-- [Applying patches →](./apply/) — full apply API surface, error handling
-- [Discovering chains →](./discover/) — `SourceStrategy` details and
+- [Applying patches →](/apply/) — full apply API surface, error handling
+- [Discovering chains →](/discover/) — `SourceStrategy` details and
   custom source implementations
-- [Wire Contract →](./wire-contract/) — when you need to write patches yourself
+- [Wire Contract →](/wire-contract/) — when you need to write patches yourself

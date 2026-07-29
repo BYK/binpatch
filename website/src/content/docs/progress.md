@@ -83,7 +83,7 @@ some reason (e.g. multiple downstream consumers).
 
 Progress is **cosmetic and must never abort the operation it
 decorates**. If you want to cancel the operation, pass an
-`AbortSignal` instead — see [Custom fetch / CA](./custom-fetch/).
+`AbortSignal` instead — see [Custom fetch / CA](/custom-fetch/).
 
 ## Display patterns
 
@@ -148,9 +148,9 @@ because span shape varies wildly between consumers. Sentry wants
 `startActiveSpan(name, fn)`; StatsD wants `timing(name, ms)`.
 
 Consumers wire the events into their own tracing — see
-[Instrumentation](./telemetry/) for the per-HTTP hook.
+[Instrumentation](/telemetry/) for the per-HTTP hook.
 
 ## Next
 
-- [Instrumentation →](./telemetry/) — wrap each HTTP call in your own span
-- [Discovering chains →](./discover/) — `SourceStrategy` details
+- [Instrumentation →](/telemetry/) — wrap each HTTP call in your own span
+- [Discovering chains →](/discover/) — `SourceStrategy` details

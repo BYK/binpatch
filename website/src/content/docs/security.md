@@ -117,11 +117,11 @@ stalled Azure redirect (or similar) cannot hang the apply.
   patches, verify signatures on receipt).
 - **TLS configuration** — pass an appropriate `fetch` implementation
   (`undici` with your CA bundle, `node-fetch` with a custom agent,
-  etc.). See [Custom fetch / CA](./custom-fetch/).
+  etc.). See [Custom fetch / CA](/custom-fetch/).
 - **Sandboxing the apply** — if you don't trust the patch data,
   run `resolveAndApply` in a worker thread with limited memory.
 
 ## Next
 
-- [Wire Contract →](./wire-contract/) — exact file format and tag scheme
-- [Custom fetch / CA →](./custom-fetch/) — passing your TLS configuration
+- [Wire Contract →](/wire-contract/) — exact file format and tag scheme
+- [Custom fetch / CA →](/custom-fetch/) — passing your TLS configuration

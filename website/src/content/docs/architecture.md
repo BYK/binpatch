@@ -146,10 +146,10 @@ tracing system is.
 
 For per-HTTP-step granularity, an `InstrumentHook` lets you wrap
 each OCI request in your own span without leaking fetch details into
-the library. See [Instrumentation](./telemetry/).
+the library. See [Instrumentation](/telemetry/).
 
 ## Next
 
-- [Security →](./security/) — verification, OOM guard, timeouts
-- [Applying patches →](./apply/) — apply API surface
-- [Discovering chains →](./discover/) — `SourceStrategy` interface
+- [Security →](/security/) — verification, OOM guard, timeouts
+- [Applying patches →](/apply/) — apply API surface
+- [Discovering chains →](/discover/) — `SourceStrategy` interface

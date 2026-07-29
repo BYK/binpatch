@@ -100,7 +100,7 @@ await resolveAndApply({
 ```
 
 For per-HTTP granularity (each OCI request wrapped in a span), pass
-`instrument` to your source — see [Instrumentation](./telemetry/).
+`instrument` to your source — see [Instrumentation](/telemetry/).
 `startSpan` (Sentry) and `startActiveSpan` (OpenTelemetry) are
 both compatible with the `InstrumentHook` shape.
 
@@ -192,6 +192,6 @@ improvements, bug fixes).
 
 ## Next
 
-- [Wire Contract →](./wire-contract/) — exact file format
-- [Security →](./security/) — verification, OOM guard, timeouts
-- [Architecture →](./architecture/) — design decisions
+- [Wire Contract →](/wire-contract/) — exact file format
+- [Security →](/security/) — verification, OOM guard, timeouts
+- [Architecture →](/architecture/) — design decisions
