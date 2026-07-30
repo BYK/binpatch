@@ -1,6 +1,6 @@
 ---
 title: binpatch
-description: Ship binary updates that download a patch instead of the whole file. binpatch generates and applies TRDIFF10 (bsdiff+zstd) deltas — the same engine getsentry/cli uses to self-update.
+description: Ship binary updates that download a patch instead of the whole file. binpatch generates and applies bsdiff+zstd deltas — the same engine getsentry/cli uses to self-update.
 template: splash
 hero:
   tagline: Every binary update re-downloads the whole file. Patch only what moved — Electron apps, CLIs, agents, anything that's a single-file artifact.
@@ -34,45 +34,11 @@ import { Card, CardGrid, Tabs, TabItem } from "@astrojs/starlight/components";
     download takes ~53&nbsp;s; the patch download + apply takes ~4&nbsp;s.
     At 25&nbsp;Mbps it's ~11&nbsp;s vs ~2&nbsp;s.
   </Card>
-  <Card title="CI minutes" icon="seti:config">
-    bsdiff is CPU-bound on the old binary, but it runs once per release
-    per platform. A 110&nbsp;MB binary diffs in under 10&nbsp;s on a
-    GitHub-hosted runner — well below free-tier limits.
-  </Card>
   <Card title="User patience" icon="heart">
     The fastest update is the one that finishes before the user opens
     Twitter. Patch downloads feel instantaneous on any link.
   </Card>
 </CardGrid>
-
-## The catch: deltas need two halves
-
-A patch is useless without both:
-
-1. **Generate** — produce the patch from `old → new` in CI, and publish it
-   somewhere your users can find it.
-2. **Apply** — discover the right patch(es) for the user's installed version,
-   download them, and reconstruct the new binary safely (integrity checks,
-   size caps, progress).
-
-And if the user is **several versions behind**, they don't get a single patch —
-they get a *chain* of patches. binpatch chains them automatically, downloads
-them **in parallel**, applies each hop **in order**, verifies the cumulative
-SHA-256, and falls back to a full download if any hop is missing or malformed.
-
-Most projects hand-roll one half and skip the other. `binpatch` gives you
-**both**, as a small MIT-licensed TypeScript library plus a drop-in GitHub
-Action.
-
-## How an update flows
-
-<img
-  src={`${import.meta.env.BASE_URL.replace(/\/$/, "")}/flow.svg`}
-  alt="How an update flows: CI produces a patch from the old binary and publishes it to a registry; the user's binary downloads it (in parallel with any chain hops) and applies it to reconstruct the new binary."
-/>
-
-The user downloads kilobytes instead of megabytes. Your CI does the heavy
-lifting once.
 
 ## When to reach for binpatch
 
@@ -101,9 +67,9 @@ lifting once.
   <TabItem label="Electron / Tauri app" icon="laptop">
     Every auto-update today fetches the full `.dmg` / `.exe` / `.AppImage`.
     If your unpacked app is 80–200&nbsp;MB, that's a lot of redundant
-    transfer per release. binpatch works the same way: ship a TRDIFF10
-    patch alongside the full artifact, and your updater picks the patch
-    when the old version is known.
+    transfer per release. binpatch works the same way: ship a small patch
+    alongside the full artifact, and your updater picks the patch when
+    the old version is known.
 
     The wire format and discovery (`ghcrSource` / `githubReleaseSource`)
     are generic — point them at your updater's existing release channel.
@@ -123,11 +89,6 @@ lifting once.
   </TabItem>
 </Tabs>
 
-**Skip it when:** updates are source-level (use `git`, `npm update`); your
-binary is tiny enough that the wire overhead isn't worth it; or you can't
-ship the *old* binary alongside the *new* one for the diff to be computed
-in CI.
-
 ## The catch: deltas need two halves
 
 A patch is useless without both:
@@ -145,21 +106,8 @@ SHA-256, and falls back to a full download if any hop is missing or malformed.
 
 Most projects hand-roll one half and skip the other. `binpatch` gives you
 **both**, as a small MIT-licensed TypeScript library plus a drop-in GitHub
-Action.
-
-## How an update flows
-
-```mermaid
-flowchart LR
-  CI["CI build"] -->|bsdiff + zstd| Patch["Patch<br/>TRDIFF10"]
-  Patch -->|publish| Reg["Registry<br/>GHCR / GitHub Releases"]
-  Reg -->|discover| Updater["Your binary<br/>updater"]
-  Updater -->|"download chain<br/>(parallel hops)"| Updater
-  Updater -->|"apply +<br/>SHA-256 verify"| Out["Verified<br/>new binary"]
-```
-
-The user downloads kilobytes instead of megabytes. Your CI does the heavy
-lifting once.
+Action. See the [GitHub Action page](/github-action/) for how an end-to-end
+update flows through the system.
 
 ## Get started
 

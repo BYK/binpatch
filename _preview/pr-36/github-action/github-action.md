@@ -7,6 +7,22 @@ patch generation and publishing. Use it when you want to update an
 existing CLI / binary release flow without writing the publish steps
 yourself.
 
+## How an update flows
+
+```mermaid
+flowchart LR
+  CI["CI build"] -->|bsdiff + zstd| Patch["Patch"]
+  Patch -->|publish| Reg["Registry<br/>GHCR / GitHub Releases"]
+  Reg -->|discover| Updater["Your binary<br/>updater"]
+  Updater -->|"download chain<br/>(parallel hops)"| Updater
+  Updater -->|"apply +<br/>SHA-256 verify"| Out["Verified<br/>new binary"]
+```
+
+CI produces the patch from the old binary and publishes it to a registry.
+Your binary's updater discovers it, downloads the chain in parallel,
+applies each hop in order, verifies the cumulative SHA-256, and lands
+on the verified new binary.
+
 ## What it does
 
 The Action has three modes, mapping 1:1 onto the typical CI job split:
