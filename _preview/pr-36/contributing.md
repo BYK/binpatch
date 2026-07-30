@@ -39,7 +39,7 @@ npm test
 npm run build
 ```
 
-Node 22.5+ is required (matches the project's minimum).
+Node 22.15+ is required (the first Node release with `node:zlib` zstd support).
 
 ## Tests
 
@@ -111,9 +111,9 @@ PR:
 
 ## Security disclosures
 
-Found a security issue? Email
-[security@withlore.ai](mailto:security@withlore.ai) or open a
-private security advisory on GitHub. **Do not** open a public issue.
+Found a security issue? Open a private security advisory on GitHub
+(Repository → Security → Advisories → "New draft security advisory").
+**Do not** open a public issue.
 
 ## Code of conduct
 

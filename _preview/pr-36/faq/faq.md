@@ -7,13 +7,9 @@ Common questions about `binpatch`.
 ## Is `binpatch` production-ready?
 
 Yes. It's been powering self-updates for shipped binaries in production
-for years — including [getsentry/cli](https://github.com/getsentry/cli)'s
+for months — including [getsentry/cli](https://github.com/getsentry/cli)'s
 self-updating Node SEA binary. Same reliability you'd build into your
-own tool — minus the years of accumulated fixes.
-
-You can measure the savings yourself: [`bench/sentry-cli-bench.mjs`](https://github.com/BYK/binpatch/blob/main/bench/sentry-cli-bench.mjs)
-downloads two adjacent releases from getsentry/cli, applies the published
-patch, and verifies the SHA-256 of the reconstructed binary.
+own tool — minus the months of accumulated fixes.
 
 ## What patch format does it support?
 
@@ -117,10 +113,10 @@ custom source is enough for most bespoke registries.
 
 ## How is the project released?
 
-Craft-driven. See `.craft.yml` and the release workflow at
-`.github/workflows/release.yml`. A maintainer runs
-`gh workflow run release.yml -f version=<x.y.z>`, Craft opens a
-release-request issue, a second maintainer labels it `accepted`,
+Craft-driven. See [Craft →](https://craft.sentry.dev), the project's
+`.craft.yml`, and the release workflow at `.github/workflows/release.yml`.
+A maintainer runs `gh workflow run release.yml -f version=<x.y.z>`, Craft
+opens a release-request issue, a second maintainer labels it `accepted`,
 and `publish.yml` (with OIDC trusted publishing) ships the npm tarball.
 
 ## Why is my install hanging?

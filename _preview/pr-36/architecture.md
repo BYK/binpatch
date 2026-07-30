@@ -7,7 +7,16 @@ decisions and trade-offs so contributors don't accidentally regress them.
 
 ## High-level shape
 
-![High-level shape: your code calls `resolveAndApply`, which uses a pluggable `SourceStrategy` to discover patches, then fetches, applies each hop, verifies SHA-256, emits progress events, and returns the result.](/architecture-flow.svg)
+```mermaid
+flowchart LR
+  Code["your code"] -->|"call"| RnA["resolveAndApply"]
+  RnA --> SS["SourceStrategy<br/>.resolveChain()<br/>(pluggable)"]
+  RnA --> F1["fetch patches"]
+  F1 --> F2["apply each hop"]
+  F2 --> F3["verify SHA-256"]
+  F3 --> F4["emit ProgressEvents"]
+  F4 -->|"return result"| Code
+```
 
 `resolveAndApply` is the single entry point for the discovery + apply
 flow. The pure apply functions (`applyPatchChainInMemory`, etc.) are
