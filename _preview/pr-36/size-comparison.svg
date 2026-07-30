@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 540" font-family="ui-sans-serif, -apple-system, 'Segoe UI', sans-serif" role="img" aria-label="Measured on getsentry/cli 0.29.0 to 0.39.0 (8 adjacent release pairs, sentry-linux-x64 Node SEA binary). The typical patch is 4.0 percent the size of the full gzipped binary — 1.32 MB patch versus 31.38 MB full, saving 96 percent per update. Patch sizes ranged from 0.9 percent (small bug-fix releases) to 8.1 percent (big feature releases).">
+  <style>
+    .ink { fill: #14171c; }
+    .muted { fill: #14171c; opacity: 0.55; }
+    .faint { stroke: #14171c; opacity: 0.18; fill: none; }
+    .pill-fill { fill: #14171c; }
+    .pill-text { fill: #fff; }
+    .accent { fill: #ff5a36; }
+    .bar-full { fill: #14171c; opacity: 0.85; }
+    .bar-patch { fill: #ff5a36; }
+    @media (prefers-color-scheme: dark) {
+      .ink { fill: #e6e8eb; }
+      .muted { fill: #e6e8eb; opacity: 0.55; }
+      .faint { stroke: #e6e8eb; opacity: 0.18; }
+      .pill-fill { fill: #e6e8eb; }
+      .pill-text { fill: #14171c; }
+      .bar-full { fill: #e6e8eb; opacity: 0.85; }
+    }
+  </style>
+
+  <!-- Header -->
+  <text x="40" y="42" font-size="13" font-weight="700" letter-spacing="1.5" class="muted">MEASURED ON</text>
+  <text x="40" y="74" font-size="26" font-weight="700" class="ink">getsentry/cli</text>
+  <text x="40" y="100" font-size="14" class="muted">8 adjacent release pairs (0.29.0 → 0.39.0) · sentry-linux-x64 Node SEA binary</text>
+
+  <!-- Two big bars: typical case (median) -->
+  <text x="40" y="150" font-size="14" font-weight="600" class="ink">Typical update (median)</text>
+
+  <!-- Full bar -->
+  <text x="40" y="194" font-size="13" class="ink" font-weight="600">Full download</text>
+  <text x="200" y="194" font-size="12" class="muted">gzipped · 31.38 MB</text>
+  <rect x="40" y="206" width="800" height="22" rx="3" class="bar-full" />
+  <text x="40" y="248" font-size="13" class="ink" font-weight="600">Patch (TRDIFF10)</text>
+  <text x="200" y="248" font-size="12" class="muted">1.32 MB</text>
+  <!-- 4% of 800 = 32px wide -->
+  <rect x="40" y="260" width="32" height="22" rx="3" class="bar-patch" />
+  <text x="80" y="277" font-size="12" class="accent" font-weight="700">4.0%</text>
+
+  <!-- Savings pill -->
+  <rect x="160" y="252" width="180" height="36" rx="18" class="pill-fill" />
+  <text x="250" y="276" font-size="14" class="pill-text" font-weight="700" text-anchor="middle">96% SAVED PER UPDATE</text>
+
+  <!-- Range strip -->
+  <text x="40" y="334" font-size="13" class="ink" font-weight="600">Patch size range</text>
+  <text x="200" y="334" font-size="12" class="muted">0.9% (small fixes) → 8.1% (big features) — median 4.0%</text>
+
+  <!-- Horizontal range bar -->
+  <line x1="40" y1="362" x2="840" y2="362" class="faint" stroke-width="1" />
+  <!-- ticks at min/median/max -->
+  <!-- 0.9% of 800 = 7.2 -->
+  <line x1="47.2" y1="354" x2="47.2" y2="370" class="ink" stroke-width="2" />
+  <text x="47.2" y="386" font-size="11" class="muted" text-anchor="middle">0.9%</text>
+  <text x="47.2" y="402" font-size="10" class="muted" text-anchor="middle">min</text>
+  <!-- 4.0% median = 32 -->
+  <line x1="72" y1="350" x2="72" y2="374" class="accent" stroke-width="3" />
+  <text x="72" y="386" font-size="11" class="accent" font-weight="700" text-anchor="middle">4.0%</text>
+  <text x="72" y="402" font-size="10" class="accent" text-anchor="middle" font-weight="700">median</text>
+  <!-- 8.1% max = 64.8 -->
+  <line x1="104.8" y1="354" x2="104.8" y2="370" class="ink" stroke-width="2" />
+  <text x="104.8" y="386" font-size="11" class="muted" text-anchor="middle">8.1%</text>
+  <text x="104.8" y="402" font-size="10" class="muted" text-anchor="middle">max</text>
+
+  <!-- Per-pair breakdown -->
+  <text x="40" y="440" font-size="13" class="ink" font-weight="600">Per release pair</text>
+  <text x="200" y="440" font-size="12" class="muted">each pair's binpatch patch size as a percentage of its gzipped binary</text>
+
+  <!-- 8 small bars, version pairs on x, patch ratio as bar height -->
+  <g transform="translate(40, 460)">
+    <line x1="0" y1="60" x2="800" y2="60" class="faint" stroke-width="1" />
+    <!-- 100% scale = 60px height -->
+    <!-- max ratio 8.1%, scale so 10% = 60px -->
+    <!-- bar height = ratio * 600 -->
+    <!-- 4.0% = 24px, 8.1% = 48.6px, 0.9% = 5.4px -->
+    <!-- Each bar gets 800/8 = 100px width, leave some padding -->
+    <!-- version pairs + bars -->
+    <!-- 0.29 -> 0.30: 4.0% -->
+    <g transform="translate(0, 0)">
+      <rect x="20" y="36" width="60" height="24" rx="2" class="bar-patch" />
+      <text x="50" y="78" font-size="11" class="muted" text-anchor="middle">0.30.0</text>
+    </g>
+    <!-- 0.30 -> 0.31: 4.0% -->
+    <g transform="translate(100, 0)">
+      <rect x="20" y="36" width="60" height="24" rx="2" class="bar-patch" />
+      <text x="50" y="78" font-size="11" class="muted" text-anchor="middle">0.31.0</text>
+    </g>
+    <!-- 0.32 -> 0.33: 3.9% -->
+    <g transform="translate(200, 0)">
+      <rect x="20" y="36.6" width="60" height="23.4" rx="2" class="bar-patch" />
+      <text x="50" y="78" font-size="11" class="muted" text-anchor="middle">0.33.0</text>
+    </g>
+    <!-- 0.33 -> 0.34: 4.0% -->
+    <g transform="translate(300, 0)">
+      <rect x="20" y="36" width="60" height="24" rx="2" class="bar-patch" />
+      <text x="50" y="78" font-size="11" class="muted" text-anchor="middle">0.34.0</text>
+    </g>
+    <!-- 0.35 -> 0.36: 1.2% -->
+    <g transform="translate(400, 0)">
+      <rect x="20" y="52.8" width="60" height="7.2" rx="2" class="bar-patch" />
+      <text x="50" y="78" font-size="11" class="muted" text-anchor="middle">0.36.0</text>
+    </g>
+    <!-- 0.36 -> 0.37: 0.9% -->
+    <g transform="translate(500, 0)">
+      <rect x="20" y="54.6" width="60" height="5.4" rx="2" class="bar-patch" />
+      <text x="50" y="78" font-size="11" class="muted" text-anchor="middle">0.37.0</text>
+    </g>
+    <!-- 0.37 -> 0.38: 7.3% -->
+    <g transform="translate(600, 0)">
+      <rect x="20" y="16.2" width="60" height="43.8" rx="2" class="bar-patch" />
+      <text x="50" y="78" font-size="11" class="muted" text-anchor="middle">0.38.0</text>
+    </g>
+    <!-- 0.38 -> 0.39: 8.1% -->
+    <g transform="translate(700, 0)">
+      <rect x="20" y="11.4" width="60" height="48.6" rx="2" class="bar-patch" />
+      <text x="50" y="78" font-size="11" class="muted" text-anchor="middle">0.39.0</text>
+    </g>
+  </g>
+
+  <!-- Footer -->
+  <text x="40" y="528" font-size="11" class="muted">SHA-256 verified · full gz decompressed ~0.4s · binpatch apply ~3-8s on M-class hardware · reproducible via bench/sentry-cli-bench.mjs</text>
+</svg>
