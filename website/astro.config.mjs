@@ -1,5 +1,6 @@
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
+import mermaidRenderer from "./integrations/mermaid-renderer.mjs";
 
 // Production serves from the root of the custom domain binpatch.p.byk.im.
 // PR previews are built under `/_preview/pr-<n>/` (pr-preview-action's
@@ -10,6 +11,9 @@ export default defineConfig({
   site: "https://binpatch.p.byk.im",
   base,
   integrations: [
+    // Bundles the Mermaid renderer into every page so fenced ```mermaid
+    // blocks render as SVG. See ./integrations/mermaid-renderer.mjs.
+    mermaidRenderer(),
     starlight({
       title: "binpatch",
       description:
