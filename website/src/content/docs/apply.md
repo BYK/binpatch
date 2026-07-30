@@ -122,14 +122,29 @@ stream instead — see [Progress & events](/progress/).
 
 ## Performance
 
-Benchmarks on a 2021 M1 MacBook Pro, ~100 MB binary, narrow-gap
-consecutive-nightly diff:
+Measured locally on an Intel Core i5-6500T @ 2.50 GHz (Skylake, no
+AVX-512) running Node v24.16.0. The workload is a 100 MB binary
+with a narrow-gap diff (~95% zero diff bytes, the dominant pattern
+in real bsdiff patches). Each implementation runs 5 times × 5 reps
+with 3 warm-up iterations; the table shows the median across runs.
 
-| Implementation | Time |
-|----------------|------|
-| Naive byte loop | 883 ms |
-| `Uint32Array` SWAR (4×4-byte) | 221 ms |
-| `BigUint64Array` (8-byte) | WRONG (carry propagates across byte lanes) |
+| Implementation | Time | Throughput | Speedup |
+|----------------|-----:|-----------:|--------:|
+| Naive byte loop | 280&nbsp;ms | 358&nbsp;MiB/s | 1.00× |
+| `Uint32Array` SWAR (4×4-byte) | 145&nbsp;ms | 691&nbsp;MiB/s | 1.93× |
+| `BigUint64Array` SWAR (8×8-byte) | 128&nbsp;ms | 784&nbsp;MiB/s | 2.19× |
+
+The SWAR trick `((a & mask) + (b & mask)) ^ ((a ^ b) & sign)` is
+correct per byte lane because the `0x7f` mask strips each byte's high
+bit before the add, so the masked add carries within each byte only,
+never across byte boundaries. Lane width (4 vs 8 bytes) affects
+throughput, not correctness — verified across 1.7M+ random pairs and
+worst-case carry patterns.
+
+We ship the `Uint32Array` variant. The BigUint64 path is ~14% faster
+on this workload, but `BigInt` allocations on the hot loop hurt
+generality (some embedded runtimes don't ship `BigInt`) and the speedup
+is small relative to the rest of the apply pipeline.
 
 The SWAR speedup applies to the diff-add loop, which is ~95% of
 apply time on a typical narrow-gap diff. Wide-gap diffs are

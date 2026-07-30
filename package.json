@@ -41,7 +41,7 @@
   ],
   "sideEffects": false,
   "engines": {
-    "node": ">=22.5"
+    "node": ">=22.15.0"
   },
   "scripts": {
     "build": "tsup",

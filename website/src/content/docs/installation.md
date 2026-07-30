@@ -8,7 +8,8 @@ shelled-out processes.
 
 ## Requirements
 
-- Node.js >= 22.5 (matches the project's minimum)
+- Node.js >= 22.15.0 (the first release with `node:zlib` zstd support;
+  we use `createZstdDecompress` and `zstdDecompressSync`)
 - A consumer that supplies an apply path (old binary on disk) and
   destination path (new binary on disk)
 
