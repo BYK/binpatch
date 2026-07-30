@@ -1,9 +1,9 @@
 ---
 title: binpatch
-description: Stop re-downloading the entire binary on every CLI update. binpatch generates and applies small binary delta patches for self-updating command-line tools.
+description: Ship binary updates that download a patch instead of the whole file. binpatch generates and applies TRDIFF10 (bsdiff+zstd) deltas — the same engine getsentry/cli uses to self-update.
 template: splash
 hero:
-  tagline: Every CLI update re-downloads the whole binary. Most of it never changed. Patch only what moved.
+  tagline: Every binary update re-downloads the whole file. Patch only what moved — Electron apps, CLIs, agents, anything that's a single-file artifact.
   actions:
     - text: Get Started
       link: /installation/
@@ -14,93 +14,118 @@ hero:
       variant: minimal
 ---
 
-import { Card, CardGrid } from "@astrojs/starlight/components";
+import { Card, CardGrid, Tabs, TabItem } from "@astrojs/starlight/components";
 
-## The problem: your CLI is a giant blob
+![Measured on getsentry/cli 0.29.0 to 0.39.0. The typical (median) patch is 4.0% the size of the full gzipped binary — 1.32 MB versus 31.38 MB, saving 96% per update. Range across 8 release pairs: 0.9% (small fixes) to 8.1% (big features).](/size-comparison.svg)
 
-You ship a 100&nbsp;MB binary. A bug fix lands. The user runs `mycli update`
-and pulls **another 100&nbsp;MB** — even though the fix touched a few hundred
-kilobytes. Repeat that across every release and every machine, and you are
-burning bandwidth and patience for bytes that haven't moved since the last
-build.
-
-The old binary and the new one are *almost identical*. A binary delta
-(compressed [bsdiff](https://www.daemonology.net/bsdiff/)) captures just the
-difference: typically **0.05–0.1%** of the full size. That 100&nbsp;MB update
-becomes a **~190&nbsp;KB patch**.
+The numbers come from [`bench/sentry-cli-bench.mjs`](https://github.com/BYK/binpatch/blob/main/bench/sentry-cli-bench.mjs)
+— it downloads real `getsentry/cli` releases, applies the published
+TRDIFF10 patch through `applyPatchChainInMemory`, and SHA-256-verifies the
+reconstructed binary. Re-run it any time.
 
 ## The catch: deltas need two halves
 
-A delta patch is useless without both:
+A patch is useless without both:
 
-1. **Generation** — produce the patch from `old → new` in CI, and publish it
+1. **Generate** — produce the patch from `old → new` in CI, and publish it
    somewhere your users can find it.
-2. **Application** — discover the right patch(es) for a user's installed
-   version, download them, and reconstruct the new binary *safely* (integrity
-   checks, size caps, progress).
+2. **Apply** — discover the right patch(es) for the user's installed version,
+   download them, and reconstruct the new binary safely (integrity checks,
+   size caps, progress).
 
-And if the user is **several versions behind**, they don't get a single
-patch — they get a *chain* of patches (1.2.0 → 1.2.1 → 1.2.2 → 1.3.4).
-binpatch chains them automatically, downloads them **in parallel**, applies
-each hop **in order**, verifies the cumulative SHA-256, and falls back to
-a full download if any hop is missing or malformed.
+And if the user is **several versions behind**, they don't get a single patch —
+they get a *chain* of patches. binpatch chains them automatically, downloads
+them **in parallel**, applies each hop **in order**, verifies the cumulative
+SHA-256, and falls back to a full download if any hop is missing or malformed.
 
 Most projects hand-roll one half and skip the other. `binpatch` gives you
 **both**, as a small MIT-licensed TypeScript library plus a drop-in GitHub
 Action.
 
+## What you save
+
 <CardGrid stagger>
-  <Card title="Generate from CI" icon="rocket">
-    The <code>binpatch/generate</code> GitHub Action shells out to a pinned
-    bsdiff, produces one patch per platform, and publishes them to GHCR or
-    GitHub Releases — automatically, on every release.
+  <Card title="Bandwidth" icon="cloud-download">
+    Median **96% fewer bytes per update** across 8 real `getsentry/cli`
+    releases. A 31&nbsp;MB gzipped full download becomes a 1.3&nbsp;MB patch
+    on a typical release — and small bug-fix releases go as low as 0.9%.
   </Card>
-  <Card title="Apply in your binary" icon="puzzle">
-    <code>resolveAndApply()</code> discovers the patch chain for the user's
-    installed version, downloads only what's needed, and reconstructs the new
-    binary with SHA-256 verification and an OOM guard built in.
+  <Card title="Wall time" icon="rocket">
+    On slow links the savings are dramatic. At 5&nbsp;Mbps the full
+    download takes ~53&nbsp;s; the patch download + apply takes ~4&nbsp;s.
+    At 25&nbsp;Mbps it's ~11&nbsp;s vs ~2&nbsp;s.
   </Card>
-  <Card title="Battle-tested at scale" icon="approve-check">
-    Powers self-updates in production for shipped CLI binaries you may
-    already be using. Same reliability you'd build into your own tool —
-    minus the years of accumulated fixes.
+  <Card title="CI minutes" icon="seti:config">
+    bsdiff is CPU-bound on the old binary, but it runs once per release
+    per platform. A 110&nbsp;MB binary diffs in under 10&nbsp;s on a
+    GitHub-hosted runner — well below free-tier limits.
   </Card>
-  <Card title="Pure TS, no runtime dependencies" icon="seti:license">
-    Pure TypeScript — no native bindings, no WASM, no shelled-out processes
-    at apply time. One ESM package, zero `dependencies` (uses Node 22+ built-ins
-    like `node:fs`, `node:zlib`, `node:crypto`).
+  <Card title="User patience" icon="heart">
+    The fastest update is the one that finishes before the user opens
+    Twitter. Patch downloads feel instantaneous on any link.
   </Card>
 </CardGrid>
 
-## How an update actually flows
+## How an update flows
 
-![How an update flows: CI produces patches from the old binary, publishes them to a registry, the user's binary downloads them in parallel and applies them in order to reconstruct the new binary.](/flow.svg)
+![How an update flows: CI produces a patch from the old binary and publishes it to a registry; the user's binary downloads it (in parallel with any chain hops) and applies it to reconstruct the new binary.](/flow.svg)
 
 The user downloads kilobytes instead of megabytes. Your CI does the heavy
 lifting once.
 
-## When to use binpatch
+## When to reach for binpatch
 
-- You ship a **self-updating CLI or agent binary** (the standard
-  `mycli update` story) — especially if it's a single-file artifact
-  produced by one of:
-  - **[Bun](https://bun.com/docs/bundler/fullstack#single-file-executable)
-    (`bun build --compile`)** — embed a JS/TS entry into a standalone executable.
-  - **[Deno](https://docs.deno.com/runtime/reference/cli/compile/) (`deno compile`)** —
-    Deno's equivalent of Bun's `--compile`.
-  - **[Node SEA](https://nodejs.org/api/single-executable-applications.html)**
-    (`node --experimental-sea-config` + `node --build`) — freeze a Node binary
-    with your app's prepended scripts.
-  - **[yao-pkg / @yao-pkg/pkg](https://yao-pkg.github.io/pkg/)** — ship a
-    virtual filesystem as a Node fork.
-  - **esbuild `--bundle`** feeding one of the above.
-  - **[Fossilize](https://github.com/GoogleChromeLabs/fossilize) + Demo** for
-    native code with an embedded V8 snapshot.
-- Your binary is **big enough that deltas pay off** — generally >50&nbsp;MB.
-- You want **generation and application handled**, not two half-solutions.
+<Tabs syncKey="binary-type">
+  <TabItem label="Self-updating CLI" icon="terminal">
+    The classic case: a `mycli update` command downloads and applies the
+    next version. Especially good fits:
 
-Do **not** reach for it when updates are source-level (use git, `npm update`),
-or when your binary is tiny (deltas only amortize at scale).
+    - **[Bun](https://bun.com/docs/bundler/fullstack#single-file-executable)
+      (`bun build --compile`)** — embed a JS/TS entry into a standalone
+      executable.
+    - **[Deno](https://docs.deno.com/runtime/reference/cli/compile/)
+      (`deno compile`)** — Deno's equivalent.
+    - **[Node SEA](https://nodejs.org/api/single-executable-applications.html)**
+      (`node --experimental-sea-config` + `node --build`) — freeze a Node
+      binary with your app's prepended scripts.
+    - **[yao-pkg / @yao-pkg/pkg](https://yao-pkg.github.io/pkg/)** — ship
+      a virtual filesystem as a Node fork.
+    - **[Fossilize](https://github.com/GoogleChromeLabs/fossilize)** for
+      native code with an embedded V8 snapshot.
+
+    Powers self-updates in production for shipped binaries you may already
+    be using — including Sentry's own
+    [getsentry/cli](https://github.com/getsentry/cli).
+  </TabItem>
+  <TabItem label="Electron / Tauri app" icon="laptop">
+    Every auto-update today fetches the full `.dmg` / `.exe` / `.AppImage`.
+    If your unpacked app is 80–200&nbsp;MB, that's a lot of redundant
+    transfer per release. binpatch works the same way: ship a TRDIFF10
+    patch alongside the full artifact, and your updater picks the patch
+    when the old version is known.
+
+    The wire format and discovery (`ghcrSource` / `githubReleaseSource`)
+    are generic — point them at your updater's existing release channel.
+  </TabItem>
+  <TabItem label="Agent / daemon binary" icon="seti:robot">
+    Long-running agents (deploy agents, observability daemons, ML
+    inference runtimes) update in-place without a restart. The patch
+    download is small enough to do opportunistically on every poll, and
+    apply time is predictable (~3–8&nbsp;s per hop on the Sentry CLI
+    binary).
+  </TabItem>
+  <TabItem label="Game / native updater" icon="star">
+    Game launchers, native installers, anything that ships as a single
+    artifact. As long as you can identify the user's installed version,
+    binpatch can deliver a delta. Native binaries with lots of relocatable
+    code compress especially well — sub-1% patches are common.
+  </TabItem>
+</Tabs>
+
+**Skip it when:** updates are source-level (use `git`, `npm update`); your
+binary is tiny enough that the wire overhead isn't worth it; or you can't
+ship the *old* binary alongside the *new* one for the diff to be computed
+in CI.
 
 ## Get started
 
@@ -109,8 +134,8 @@ npm install binpatch
 ```
 
 Then **both**: generate patches from CI with the
-[GitHub Action](/github-action/) (so nightly builds push to GHCR and stable
-releases push to GitHub Releases), *and* wire
+[GitHub Action](/github-action/) (so nightly builds push to GHCR and
+stable releases push to GitHub Releases), *and* wire
 [`resolveAndApply`](/getting-started/) into your binary's update command
 to discover and apply them.
 
@@ -122,5 +147,5 @@ const result = await resolveAndApply({
   targetVersion: "1.3.4",
   source: ghcrSource({ repo: "myorg/mycli" }),
 });
-// result.destPath now holds the verified 1.3.4 binary; download was ~70 KB.
+// result.destPath now holds the verified 1.3.4 binary; download was ~1 MB.
 ```

@@ -7,7 +7,8 @@
 Reusable binary delta-update engine. Apply a **TRDIFF10 / bsdiff+zstd** patch
 chain to a binary, discover chains from a pluggable source (OCI/GHCR tags or
 GitHub Release assets), and generate + publish patches via a composite GitHub
-Action. Pure Node, zero product coupling.
+Action. Pure Node, zero product coupling — works for Electron apps, CLIs,
+agents, and any single-file binary artifact.
 
 ```sh
 npm install binpatch
@@ -17,11 +18,13 @@ npm install binpatch
 
 ## Why
 
-Every time you `mycli update`, you pull the **entire binary again** — even when
-the new release changed a few hundred kilobytes of a 100&nbsp;MB file. That's
-bandwidth and patience burned on bytes that didn't move. A binary delta (bsdiff)
-between consecutive builds is typically **0.05–0.1%** of the full size, so that
-100&nbsp;MB download becomes a ~190&nbsp;KB patch.
+Every time your binary updates itself, your users pull the **entire file
+again** — even when the new release changed a few hundred kilobytes of a
+100&nbsp;MB Electron app, a 50&nbsp;MB CLI, or a 200&nbsp;MB game updater.
+That's bandwidth and patience burned on bytes that didn't move. A binary
+delta (bsdiff) between consecutive builds is typically **0.05–0.1%** of
+the full size — see the [home page graph](https://binpatch.p.byk.im/) for
+real measurements on getsentry/cli.
 
 The hard part isn't making the patch — it's the **two halves** that most
 projects hand-roll separately (and get wrong):
@@ -31,10 +34,10 @@ projects hand-roll separately (and get wrong):
    safely (integrity check, size cap, progress).
 
 `binpatch` gives you **both** as one MIT-licensed TypeScript library plus a
-drop-in GitHub Action. It's the apply/discovery core extracted from
-Powers self-updates in production for shipped CLI binaries you may
-already be using. Battle-tested reliability — minus the years of accumulated
-fixes you'd otherwise have to write yourself.
+drop-in GitHub Action. Powers self-updates in production for shipped
+binaries you may already be using (including [getsentry/cli](https://github.com/getsentry/cli)).
+Battle-tested reliability — minus the years of accumulated fixes you'd
+otherwise have to write yourself.
 
 ## Scope
 
