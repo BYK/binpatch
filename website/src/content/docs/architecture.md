@@ -84,8 +84,8 @@ If you ship embedded native code with heavy relocation churn, or your
 binary is small enough that even the bsdiff patch is the bottleneck,
 consider [Zucchini](https://chromium.googlesource.com/chromium/src/+/main/components/zucchini/README.md)
 or [bsdiff-mantissa](https://github.com/mendsley/bsdiff). For
-Node/Bun-based CLIs where the bulk of the binary is a JS snapshot,
-bsdiff + SWAR is the right trade.
+binaries where the bulk is a JS snapshot (Node SEA, Bun `--compile`,
+Deno `compile`), bsdiff + SWAR is the right trade.
 
 ## Apply: why no native code?
 
@@ -94,7 +94,7 @@ to avoid loading it fully into RAM. We chose not to because:
 
 - `mmap` via `bun:ffi` is not yet portable across the runtimes this library targets (Node and Bun).
 - `mmap-io` and similar native addons break esbuild + Node SEA
-  bundling, which several shipped CLI consumers rely on.
+  bundling, which several shipped consumers rely on.
 - For a 100 MB binary, an in-memory `Uint8Array` is fine: it's about
   1% of a typical CI runner's RAM budget.
 
