@@ -22,9 +22,9 @@ Every time your binary updates itself, your users pull the **entire file
 again** — even when the new release changed a few hundred kilobytes of a
 100&nbsp;MB Electron app, a 50&nbsp;MB CLI, or a 200&nbsp;MB game updater.
 That's bandwidth and patience burned on bytes that didn't move. A binary
-delta (bsdiff) between consecutive builds is typically **0.05–0.1%** of
-the full size — see the [home page graph](https://binpatch.p.byk.im/) for
-real measurements on getsentry/cli.
+delta (bsdiff) between consecutive builds is typically a few percent of
+the full size — see the [home page graph](https://binpatch.p.byk.im/)
+for real measurements on `getsentry/cli`.
 
 The hard part isn't making the patch — it's the **two halves** that most
 projects hand-roll separately (and get wrong):

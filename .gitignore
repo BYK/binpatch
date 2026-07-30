@@ -4,10 +4,3 @@ website/.astro/
 website/dist/
 *.log
 .DS_Store
-
-# Benchmark fixtures — large downloaded binaries the bench script pulls
-# on demand. Never committed.
-bench/*.gz
-bench/*.patch
-bench/sentry-linux-x64
-bench/sentry-linux-x64.applied

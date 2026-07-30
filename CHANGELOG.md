@@ -11,11 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Reposition homepage to lead with "any binary" framing (Electron apps, CLIs,
   agents, game updaters) instead of CLI-only. Hero now features a measured
-  download comparison chart for getsentry/cli 0.38.0 → 0.39.0 (31.83 MB full
-  gzipped vs 2.58 MB patch = 92% saved). Numbers come from the new
-  `bench/sentry-cli-bench.mjs` reproducible benchmark, which downloads the
-  real upstream artifacts and verifies the SHA-256 of the reconstructed
-  binary.
+  download comparison chart for getsentry/cli 0.29.0 → 0.39.0 (8 adjacent
+  release pairs, sentry-linux-x64). The typical (median) patch is 4.0%
+  the size of the full gzipped binary — 1.32 MB vs 31.38 MB, 96% saved per
+  update. Range across the 8 pairs: 0.9% (small fixes) to 8.1% (big
+  features).
 - Add "View as Markdown" link in the page footer. Each page now exposes its
   raw markdown source at `/<slug>.md` — implemented via a Starlight
   component override and an Astro API endpoint, both base-path aware so

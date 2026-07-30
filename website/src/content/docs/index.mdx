@@ -18,10 +18,9 @@ import { Card, CardGrid, Tabs, TabItem } from "@astrojs/starlight/components";
 
 ![Measured on getsentry/cli 0.29.0 to 0.39.0. The typical (median) patch is 4.0% the size of the full gzipped binary — 1.32 MB versus 31.38 MB, saving 96% per update. Range across 8 release pairs: 0.9% (small fixes) to 8.1% (big features).](/size-comparison.svg)
 
-The numbers come from [`bench/sentry-cli-bench.mjs`](https://github.com/BYK/binpatch/blob/main/bench/sentry-cli-bench.mjs)
-— it downloads real `getsentry/cli` releases, applies the published
-TRDIFF10 patch through `applyPatchChainInMemory`, and SHA-256-verifies the
-reconstructed binary. Re-run it any time.
+Measured on 8 adjacent `getsentry/cli` release pairs
+([0.29.0 → 0.39.0](https://github.com/getsentry/cli/releases)) — the
+same engine in production today.
 
 ## The catch: deltas need two halves
 
