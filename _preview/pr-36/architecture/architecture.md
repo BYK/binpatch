@@ -58,13 +58,18 @@ const sign = 0x80808080;
 
 For a 100 MB binary where ~99% of diff blocks are zero-dominated and
 bsdiff has already crushed them into the high 8-12 KB of the patch,
-this 4-byte-per-cycle approach takes ~220 ms vs ~883 ms for the
-naive byte loop on the same machine (~4× faster).
+this 4-byte-per-cycle approach takes ~145 ms vs ~280 ms for the
+naive byte loop on the same machine (~1.9× faster). Real numbers
+from the [Apply → Performance](/apply/#performance) benchmark.
 
 We do **not** use `BigUint64Array` for SWAR. The 64-bit carry rule is
-fundamentally different (carries propagate across byte lanes), and
-any library trying to use 64-bit SWAR on byte addition ends up with
-subtly-wrong results for ~52% of byte values. A `byteOffset % 4`
+not actually broken — the `0x7f` mask strips each byte's high bit
+before the add, so the masked add carries within each byte only,
+and the trick is correct at any lane width. (Verified across
+1.7M+ random pairs and worst-case carry patterns.) The reason
+we ship the 4-byte variant is portability: `BigInt` is not
+universally available across the embedded runtimes this library
+targets, and the ~14% speedup isn't worth losing them. A `byteOffset % 4`
 alignment guard falls back to the byte loop when the buffer is not
 4-byte aligned — keeps the SWAR fast path safe.
 
