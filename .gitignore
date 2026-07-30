@@ -2,5 +2,7 @@ node_modules/
 dist/
 website/.astro/
 website/dist/
+website/src/generated/
+website/public/og-image-*.png
 *.log
 .DS_Store

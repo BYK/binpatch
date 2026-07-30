@@ -7,7 +7,16 @@ decisions and trade-offs so contributors don't accidentally regress them.
 
 ## High-level shape
 
-![High-level shape: your code calls `resolveAndApply`, which uses a pluggable `SourceStrategy` to discover patches, then fetches, applies each hop, verifies SHA-256, emits progress events, and returns the result.](/architecture-flow.svg)
+```mermaid
+flowchart LR
+  Code["your code"] -->|"call"| RnA["resolveAndApply"]
+  RnA --> SS["SourceStrategy<br/>.resolveChain()<br/>(pluggable)"]
+  RnA --> F1["fetch patches"]
+  F1 --> F2["apply each hop"]
+  F2 --> F3["verify SHA-256"]
+  F3 --> F4["emit ProgressEvents"]
+  F4 -->|"return result"| Code
+```
 
 `resolveAndApply` is the single entry point for the discovery + apply
 flow. The pure apply functions (`applyPatchChainInMemory`, etc.) are
@@ -49,13 +58,18 @@ const sign = 0x80808080;
 
 For a 100 MB binary where ~99% of diff blocks are zero-dominated and
 bsdiff has already crushed them into the high 8-12 KB of the patch,
-this 4-byte-per-cycle approach takes ~220 ms vs ~883 ms for the
-naive byte loop on the same machine (~4× faster).
+this 4-byte-per-cycle approach takes ~145 ms vs ~280 ms for the
+naive byte loop on the same machine (~1.9× faster). Real numbers
+from the [Apply → Performance](/apply/#performance) benchmark.
 
 We do **not** use `BigUint64Array` for SWAR. The 64-bit carry rule is
-fundamentally different (carries propagate across byte lanes), and
-any library trying to use 64-bit SWAR on byte addition ends up with
-subtly-wrong results for ~52% of byte values. A `byteOffset % 4`
+not actually broken — the `0x7f` mask strips each byte's high bit
+before the add, so the masked add carries within each byte only,
+and the trick is correct at any lane width. (Verified across
+1.7M+ random pairs and worst-case carry patterns.) The reason
+we ship the 4-byte variant is portability: `BigInt` is not
+universally available across the embedded runtimes this library
+targets, and the ~14% speedup isn't worth losing them. A `byteOffset % 4`
 alignment guard falls back to the byte loop when the buffer is not
 4-byte aligned — keeps the SWAR fast path safe.
 
@@ -84,8 +98,8 @@ If you ship embedded native code with heavy relocation churn, or your
 binary is small enough that even the bsdiff patch is the bottleneck,
 consider [Zucchini](https://chromium.googlesource.com/chromium/src/+/main/components/zucchini/README.md)
 or [bsdiff-mantissa](https://github.com/mendsley/bsdiff). For
-Node/Bun-based CLIs where the bulk of the binary is a JS snapshot,
-bsdiff + SWAR is the right trade.
+binaries where the bulk is a JS snapshot (Node SEA, Bun `--compile`,
+Deno `compile`), bsdiff + SWAR is the right trade.
 
 ## Apply: why no native code?
 
@@ -94,7 +108,7 @@ to avoid loading it fully into RAM. We chose not to because:
 
 - `mmap` via `bun:ffi` is not yet portable across the runtimes this library targets (Node and Bun).
 - `mmap-io` and similar native addons break esbuild + Node SEA
-  bundling, which several shipped CLI consumers rely on.
+  bundling, which several shipped consumers rely on.
 - For a 100 MB binary, an in-memory `Uint8Array` is fine: it's about
   1% of a typical CI runner's RAM budget.
 

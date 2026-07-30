@@ -1,15 +1,34 @@
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
+import { fileURLToPath } from "node:url";
+import mermaidRenderer from "./integrations/mermaid-renderer.mjs";
+import {
+  socialAssets,
+  generateAssetsEagerly,
+} from "./integrations/social-assets.ts";
 
 // Production serves from the root of the custom domain binpatch.p.byk.im.
 // PR previews are built under `/_preview/pr-<n>/` (pr-preview-action's
 // umbrella dir) — same root, so DOCS_BASE_PATH points there with no /binpatch/.
 const base = process.env.DOCS_BASE_PATH || "/";
 
+// Run the OG image generation synchronously at config-load time so the
+// Starlight head array can reference the (content-hashed) OG image
+// filename. Without this, the static head array would hardcode a stale
+// URL and social platforms could cache the wrong image indefinitely.
+const projectRoot = fileURLToPath(new URL(".", import.meta.url));
+const { ogFilename } = await generateAssetsEagerly(projectRoot);
+
 export default defineConfig({
   site: "https://binpatch.p.byk.im",
   base,
   integrations: [
+    // Bundles the Mermaid renderer into every page so fenced ```mermaid
+    // blocks render as SVG. See ./integrations/mermaid-renderer.mjs.
+    mermaidRenderer(),
+    // Generates the 1200x630 OG image at build time with a content-hashed
+    // filename. See ./integrations/social-assets.ts.
+    socialAssets(),
     starlight({
       title: "binpatch",
       description:
@@ -66,6 +85,101 @@ export default defineConfig({
             sizes: "180x180",
           },
         },
+        // Open Graph + Twitter Card. The OG image is content-hashed at
+        // build time so the URL changes whenever the image does — see
+        // integrations/social-assets.ts for the generation logic.
+        {
+          tag: "meta",
+          attrs: {
+            property: "og:title",
+            content: "binpatch",
+          },
+        },
+        {
+          tag: "meta",
+          attrs: {
+            property: "og:description",
+            content:
+              "Ship binary updates that download a patch instead of the whole file. binpatch generates and applies small binary delta patches — the same engine getsentry/cli uses to self-update.",
+          },
+        },
+        {
+          tag: "meta",
+          attrs: {
+            property: "og:image",
+            content: `https://binpatch.p.byk.im${base}${ogFilename}`,
+          },
+        },
+        {
+          tag: "meta",
+          attrs: {
+            property: "og:image:width",
+            content: "1200",
+          },
+        },
+        {
+          tag: "meta",
+          attrs: {
+            property: "og:image:height",
+            content: "630",
+          },
+        },
+        {
+          tag: "meta",
+          attrs: {
+            property: "og:image:alt",
+            content: "binpatch — Patch only what moved. Up to 96% smaller updates for any binary.",
+          },
+        },
+        {
+          tag: "meta",
+          attrs: {
+            property: "og:url",
+            content: "https://binpatch.p.byk.im",
+          },
+        },
+        {
+          tag: "meta",
+          attrs: {
+            property: "og:type",
+            content: "website",
+          },
+        },
+        {
+          tag: "meta",
+          attrs: {
+            property: "og:site_name",
+            content: "binpatch",
+          },
+        },
+        {
+          tag: "meta",
+          attrs: {
+            name: "twitter:card",
+            content: "summary_large_image",
+          },
+        },
+        {
+          tag: "meta",
+          attrs: {
+            name: "twitter:title",
+            content: "binpatch",
+          },
+        },
+        {
+          tag: "meta",
+          attrs: {
+            name: "twitter:description",
+            content: "Patch only what moved. Up to 96% smaller updates for any binary.",
+          },
+        },
+        {
+          tag: "meta",
+          attrs: {
+            name: "twitter:image",
+            content: `https://binpatch.p.byk.im${base}${ogFilename}`,
+          },
+        },
       ],
       social: [
         {
@@ -118,6 +232,9 @@ export default defineConfig({
         },
       ],
       customCss: ["./src/custom.css"],
+      components: {
+        Footer: "./src/components/Footer.astro",
+      },
     }),
   ],
 });

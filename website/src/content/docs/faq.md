@@ -6,9 +6,10 @@ Common questions about `binpatch`.
 
 ## Is `binpatch` production-ready?
 
-Yes. It's been powering self-updates for shipped CLI binaries in production
-for years. Same reliability you'd build into your own tool — minus the
-years of accumulated fixes.
+Yes. It's been powering self-updates for shipped binaries in production
+for months — including [getsentry/cli](https://github.com/getsentry/cli)'s
+self-updating Node SEA binary. Same reliability you'd build into your
+own tool — minus the months of accumulated fixes.
 
 ## What patch format does it support?
 
@@ -45,9 +46,12 @@ already have on disk. Discovery is optional.
 
 ## What's the overhead vs. shipping full binaries?
 
-For a typical CLI update (small code change), the patch is ~0.07%
-of the binary size. For a 100 MB binary, that's ~75 KB. Bandwidth
-savings at scale: 99.93%.
+For a typical small-release update, the patch is ~8% of the
+gzipped binary size — see the graph on the [home page](/#the-download-size-that-doesnt-scale).
+Wider-gap releases produce larger patches; the bundled
+[GitHub Action](/github-action/) enforces a `max-ratio` budget
+(default 50%) and falls back to publishing a full binary instead
+of a pathologically large patch.
 
 ## Why not Courgette-style executable-aware diffing?
 
@@ -109,10 +113,10 @@ custom source is enough for most bespoke registries.
 
 ## How is the project released?
 
-Craft-driven. See `.craft.yml` and the release workflow at
-`.github/workflows/release.yml`. A maintainer runs
-`gh workflow run release.yml -f version=<x.y.z>`, Craft opens a
-release-request issue, a second maintainer labels it `accepted`,
+Craft-driven. See [Craft →](https://craft.sentry.dev), the project's
+`.craft.yml`, and the release workflow at `.github/workflows/release.yml`.
+A maintainer runs `gh workflow run release.yml -f version=<x.y.z>`, Craft
+opens a release-request issue, a second maintainer labels it `accepted`,
 and `publish.yml` (with OIDC trusted publishing) ships the npm tarball.
 
 ## Why is my install hanging?

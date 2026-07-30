@@ -1,0 +1,84 @@
+---
+const route = Astro.locals.starlightRoute;
+// `route.id` is the route slug — `""` for the homepage, `installation` for
+// `/installation/`, `wire-contract` for `/wire-contract/`. The 404 page is
+// a synthetic Starlight route with `id === "404"`.
+const routeId = route?.id ?? "";
+const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const href =
+  routeId === "404"
+    ? null
+    : routeId === ""
+      ? `${base}/index.md`
+      : `${base}/${routeId}.md`;
+---
+
+{
+  href && (
+    <a href={href} class="sl-flex print:hidden markdown-link">
+      <svg
+        width="1.2em"
+        height="1.2em"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+        <line x1="9" y1="13" x2="15" y2="13"></line>
+        <line x1="9" y1="17" x2="15" y2="17"></line>
+      </svg>
+      <span>View as Markdown</span>
+    </a>
+  )
+}
+
+<style>
+  .markdown-link {
+    gap: 0.5rem;
+    align-items: center;
+    text-decoration: none;
+    color: var(--sl-color-gray-3);
+    font-size: var(--sl-text-sm);
+  }
+  .markdown-link:hover {
+    color: var(--sl-color-white);
+  }
+</style>
+
+<a href={href} class="sl-flex print:hidden markdown-link">
+  <svg
+    width="1.2em"
+    height="1.2em"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+    <polyline points="14 2 14 8 20 8"></polyline>
+    <line x1="9" y1="13" x2="15" y2="13"></line>
+    <line x1="9" y1="17" x2="15" y2="17"></line>
+  </svg>
+  <span>View as Markdown</span>
+</a>
+
+<style>
+  .markdown-link {
+    gap: 0.5rem;
+    align-items: center;
+    text-decoration: none;
+    color: var(--sl-color-gray-3);
+    font-size: var(--sl-text-sm);
+  }
+  .markdown-link:hover {
+    color: var(--sl-color-white);
+  }
+</style>
