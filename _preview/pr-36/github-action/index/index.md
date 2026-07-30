@@ -47,18 +47,19 @@ import { Card, CardGrid, Tabs, TabItem } from "@astrojs/starlight/components";
     The classic case: a `mycli update` command downloads and applies the
     next version. Especially good fits:
 
-    - **[Bun](https://bun.com/docs/bundler/fullstack#single-file-executable)
-      (`bun build --compile`)** — embed a JS/TS entry into a standalone
+    - <img src="https://cdn.simpleicons.org/bun" alt="Bun" width="20" height="20" style="vertical-align:-4px;margin-right:6px" /> **[Bun](https://bun.com/docs/bundler/fullstack#single-file-executable)**
+      (`bun build --compile`) — embed a JS/TS entry into a standalone
       executable.
-    - **[Deno](https://docs.deno.com/runtime/reference/cli/compile/)
-      (`deno compile`)** — Deno's equivalent.
-    - **[Node SEA](https://nodejs.org/api/single-executable-applications.html)**
-      (`node --experimental-sea-config` + `node --build`) — freeze a Node
-      binary with your app's prepended scripts.
-    - **[yao-pkg / @yao-pkg/pkg](https://yao-pkg.github.io/pkg/)** — ship
-      a virtual filesystem as a Node fork.
-    - **[Fossilize](https://github.com/GoogleChromeLabs/fossilize)** for
-      native code with an embedded V8 snapshot.
+    - <img src="https://cdn.simpleicons.org/deno" alt="Deno" width="20" height="20" style="vertical-align:-4px;margin-right:6px" /> **[Deno](https://docs.deno.com/runtime/reference/cli/compile/)**
+      (`deno compile`) — Deno's equivalent.
+    - <img src="https://cdn.simpleicons.org/nodedotjs" alt="Node.js" width="20" height="20" style="vertical-align:-4px;margin-right:6px" /> **[Node SEA](https://nodejs.org/api/single-executable-applications.html)**
+      & **[Fossilize](https://github.com/GoogleChromeLabs/fossilize)** —
+      freeze a Node runtime (or V8 snapshot) with your app's prepended
+      scripts. `node --experimental-sea-config` + `node --build` for
+      SEA.
+    - <img src="https://cdn.simpleicons.org/npm" alt="pkg" width="20" height="20" style="vertical-align:-4px;margin-right:6px" /> **[pkg](https://yao-pkg.github.io/pkg/)** — ship your
+      Node.js project as one self-contained binary. No runtime install,
+      no npm, just run.
 
     Powers self-updates in production for shipped binaries you may already
     be using — including Sentry's own
@@ -66,10 +67,9 @@ import { Card, CardGrid, Tabs, TabItem } from "@astrojs/starlight/components";
   </TabItem>
   <TabItem label="Electron / Tauri app" icon="laptop">
     Every auto-update today fetches the full `.dmg` / `.exe` / `.AppImage`.
-    If your unpacked app is 80–200&nbsp;MB, that's a lot of redundant
-    transfer per release. binpatch works the same way: ship a small patch
-    alongside the full artifact, and your updater picks the patch when
-    the old version is known.
+    binpatch works the same way: ship a small patch alongside the full
+    artifact, and your updater picks the patch when the old version is
+    known.
 
     The wire format and discovery (`ghcrSource` / `githubReleaseSource`)
     are generic — point them at your updater's existing release channel.

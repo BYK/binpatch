@@ -78,26 +78,21 @@ Twitter. Patch downloads feel instantaneous on any link.</p></div></article></di
 	customElements.define('starlight-tabs-restore', StarlightTabsRestore);
 })()
 </script><starlight-tabs data-sync-key="binary-type" class="astro-hbt4ddzs"><div class="tablist-wrapper not-content astro-hbt4ddzs"><ul role="tablist" class="astro-hbt4ddzs"><li role="presentation" class="tab astro-hbt4ddzs"><a role="tab" href="#tab-panel-0" id="tab-0" aria-selected="true" tabindex="0" class="astro-hbt4ddzs"><svg aria-hidden="true" class="astro-hbt4ddzs astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"></svg>Self-updating CLI</a></li><li role="presentation" class="tab astro-hbt4ddzs"><a role="tab" href="#tab-panel-1" id="tab-1" aria-selected="false" tabindex="-1" class="astro-hbt4ddzs"><svg aria-hidden="true" class="astro-hbt4ddzs astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21 14h-1V7a3 3 0 0 0-3-3H7a3 3 0 0 0-3 3v7H3a1 1 0 0 0-1 1v2a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3v-2a1 1 0 0 0-1-1ZM6 7a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v7H6V7Zm14 10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-1h16v1Z"/></svg>Electron / Tauri app</a></li><li role="presentation" class="tab astro-hbt4ddzs"><a role="tab" href="#tab-panel-2" id="tab-2" aria-selected="false" tabindex="-1" class="astro-hbt4ddzs"><svg aria-hidden="true" class="astro-hbt4ddzs astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"></svg>Agent / daemon binary</a></li><li role="presentation" class="tab astro-hbt4ddzs"><a role="tab" href="#tab-panel-3" id="tab-3" aria-selected="false" tabindex="-1" class="astro-hbt4ddzs"><svg aria-hidden="true" class="astro-hbt4ddzs astro-n5k4ipy7" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M22 9.67a1 1 0 0 0-.86-.67l-5.69-.83L12.9 3a1 1 0 0 0-1.8 0L8.55 8.16 2.86 9a1 1 0 0 0-.81.68 1 1 0 0 0 .25 1l4.13 4-1 5.68a1 1 0 0 0 1.45 1.07L12 18.76l5.1 2.68c.14.08.3.12.46.12a1 1 0 0 0 .99-1.19l-1-5.68 4.13-4A1 1 0 0 0 22 9.67Zm-6.15 4a1 1 0 0 0-.29.89l.72 4.19-3.76-2a1 1 0 0 0-.94 0l-3.76 2 .72-4.19a1 1 0 0 0-.29-.89l-3-3 4.21-.61a1 1 0 0 0 .76-.55L12 5.7l1.88 3.82a1 1 0 0 0 .76.55l4.21.61-3 2.99Z"/></svg>Game / native updater</a></li></ul></div><div id="tab-panel-0" aria-labelledby="tab-0" role="tabpanel"><p>The classic case: a <code dir="auto">mycli update</code> command downloads and applies the
-next version. Especially good fits:</p><ul>
-<li><strong><a href="https://bun.com/docs/bundler/fullstack#single-file-executable">Bun</a>
-(<code dir="auto">bun build --compile</code>)</strong> — embed a JS/TS entry into a standalone
-executable.</li>
-<li><strong><a href="https://docs.deno.com/runtime/reference/cli/compile/">Deno</a>
-(<code dir="auto">deno compile</code>)</strong> — Deno’s equivalent.</li>
-<li><strong><a href="https://nodejs.org/api/single-executable-applications.html">Node SEA</a></strong>
-(<code dir="auto">node --experimental-sea-config</code> + <code dir="auto">node --build</code>) — freeze a Node
-binary with your app’s prepended scripts.</li>
-<li><strong><a href="https://yao-pkg.github.io/pkg/">yao-pkg / @yao-pkg/pkg</a></strong> — ship
-a virtual filesystem as a Node fork.</li>
-<li><strong><a href="https://github.com/GoogleChromeLabs/fossilize">Fossilize</a></strong> for
-native code with an embedded V8 snapshot.</li>
-</ul><p>Powers self-updates in production for shipped binaries you may already
+next version. Especially good fits:</p><ul><li><img src="https://cdn.simpleicons.org/bun" alt="Bun" width="20" height="20" style="vertical-align:-4px;margin-right:6px"> <strong><a href="https://bun.com/docs/bundler/fullstack#single-file-executable">Bun</a></strong>
+(<code dir="auto">bun build --compile</code>) — embed a JS/TS entry into a standalone
+executable.</li><li><img src="https://cdn.simpleicons.org/deno" alt="Deno" width="20" height="20" style="vertical-align:-4px;margin-right:6px"> <strong><a href="https://docs.deno.com/runtime/reference/cli/compile/">Deno</a></strong>
+(<code dir="auto">deno compile</code>) — Deno’s equivalent.</li><li><img src="https://cdn.simpleicons.org/nodedotjs" alt="Node.js" width="20" height="20" style="vertical-align:-4px;margin-right:6px"> <strong><a href="https://nodejs.org/api/single-executable-applications.html">Node SEA</a></strong>
+&#x26; <strong><a href="https://github.com/GoogleChromeLabs/fossilize">Fossilize</a></strong> —
+freeze a Node runtime (or V8 snapshot) with your app’s prepended
+scripts. <code dir="auto">node --experimental-sea-config</code> + <code dir="auto">node --build</code> for
+SEA.</li><li><img src="https://cdn.simpleicons.org/npm" alt="pkg" width="20" height="20" style="vertical-align:-4px;margin-right:6px"> <strong><a href="https://yao-pkg.github.io/pkg/">pkg</a></strong> — ship your
+Node.js project as one self-contained binary. No runtime install,
+no npm, just run.</li></ul><p>Powers self-updates in production for shipped binaries you may already
 be using — including Sentry’s own
 <a href="https://github.com/getsentry/cli">getsentry/cli</a>.</p></div><div id="tab-panel-1" aria-labelledby="tab-1" role="tabpanel" tabindex="0" hidden><p>Every auto-update today fetches the full <code dir="auto">.dmg</code> / <code dir="auto">.exe</code> / <code dir="auto">.AppImage</code>.
-If your unpacked app is 80–200 MB, that’s a lot of redundant
-transfer per release. binpatch works the same way: ship a small patch
-alongside the full artifact, and your updater picks the patch when
-the old version is known.</p><p>The wire format and discovery (<code dir="auto">ghcrSource</code> / <code dir="auto">githubReleaseSource</code>)
+binpatch works the same way: ship a small patch alongside the full
+artifact, and your updater picks the patch when the old version is
+known.</p><p>The wire format and discovery (<code dir="auto">ghcrSource</code> / <code dir="auto">githubReleaseSource</code>)
 are generic — point them at your updater’s existing release channel.</p></div><div id="tab-panel-2" aria-labelledby="tab-2" role="tabpanel" tabindex="0" hidden><p>Long-running agents (deploy agents, observability daemons, ML
 inference runtimes) update in-place without a restart. The patch
 download is small enough to do opportunistically on every poll, and
