@@ -21,29 +21,6 @@ import { Card, CardGrid, Tabs, TabItem } from "@astrojs/starlight/components";
   alt="Measured on getsentry/cli 0.29.0 to 0.39.0. The typical (median) patch is 4.0% the size of the full gzipped binary — 1.32 MB versus 31.38 MB, saving 96% per update. Range across 8 release pairs: 0.9% (small fixes) to 8.1% (big features)."
 />
 
-Measured on 8 adjacent `getsentry/cli` release pairs
-([0.29.0 → 0.39.0](https://github.com/getsentry/cli/releases)) — the
-same engine in production today.
-
-## The catch: deltas need two halves
-
-A patch is useless without both:
-
-1. **Generate** — produce the patch from `old → new` in CI, and publish it
-   somewhere your users can find it.
-2. **Apply** — discover the right patch(es) for the user's installed version,
-   download them, and reconstruct the new binary safely (integrity checks,
-   size caps, progress).
-
-And if the user is **several versions behind**, they don't get a single patch —
-they get a *chain* of patches. binpatch chains them automatically, downloads
-them **in parallel**, applies each hop **in order**, verifies the cumulative
-SHA-256, and falls back to a full download if any hop is missing or malformed.
-
-Most projects hand-roll one half and skip the other. `binpatch` gives you
-**both**, as a small MIT-licensed TypeScript library plus a drop-in GitHub
-Action.
-
 ## What you save
 
 <CardGrid stagger>
@@ -67,6 +44,25 @@ Action.
     Twitter. Patch downloads feel instantaneous on any link.
   </Card>
 </CardGrid>
+
+## The catch: deltas need two halves
+
+A patch is useless without both:
+
+1. **Generate** — produce the patch from `old → new` in CI, and publish it
+   somewhere your users can find it.
+2. **Apply** — discover the right patch(es) for the user's installed version,
+   download them, and reconstruct the new binary safely (integrity checks,
+   size caps, progress).
+
+And if the user is **several versions behind**, they don't get a single patch —
+they get a *chain* of patches. binpatch chains them automatically, downloads
+them **in parallel**, applies each hop **in order**, verifies the cumulative
+SHA-256, and falls back to a full download if any hop is missing or malformed.
+
+Most projects hand-roll one half and skip the other. `binpatch` gives you
+**both**, as a small MIT-licensed TypeScript library plus a drop-in GitHub
+Action.
 
 ## How an update flows
 
