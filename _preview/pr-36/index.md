@@ -128,6 +128,39 @@ binary is tiny enough that the wire overhead isn't worth it; or you can't
 ship the *old* binary alongside the *new* one for the diff to be computed
 in CI.
 
+## The catch: deltas need two halves
+
+A patch is useless without both:
+
+1. **Generate** — produce the patch from `old → new` in CI, and publish it
+   somewhere your users can find it.
+2. **Apply** — discover the right patch(es) for the user's installed version,
+   download them, and reconstruct the new binary safely (integrity checks,
+   size caps, progress).
+
+And if the user is **several versions behind**, they don't get a single patch —
+they get a *chain* of patches. binpatch chains them automatically, downloads
+them **in parallel**, applies each hop **in order**, verifies the cumulative
+SHA-256, and falls back to a full download if any hop is missing or malformed.
+
+Most projects hand-roll one half and skip the other. `binpatch` gives you
+**both**, as a small MIT-licensed TypeScript library plus a drop-in GitHub
+Action.
+
+## How an update flows
+
+```mermaid
+flowchart LR
+  CI["CI build"] -->|bsdiff + zstd| Patch["Patch<br/>TRDIFF10"]
+  Patch -->|publish| Reg["Registry<br/>GHCR / GitHub Releases"]
+  Reg -->|discover| Updater["Your binary<br/>updater"]
+  Updater -->|"download chain<br/>(parallel hops)"| Updater
+  Updater -->|"apply +<br/>SHA-256 verify"| Out["Verified<br/>new binary"]
+```
+
+The user downloads kilobytes instead of megabytes. Your CI does the heavy
+lifting once.
+
 ## Get started
 
 ```bash
