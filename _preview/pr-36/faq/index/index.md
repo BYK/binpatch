@@ -16,7 +16,10 @@ hero:
 
 import { Card, CardGrid, Tabs, TabItem } from "@astrojs/starlight/components";
 
-![Measured on getsentry/cli 0.29.0 to 0.39.0. The typical (median) patch is 4.0% the size of the full gzipped binary — 1.32 MB versus 31.38 MB, saving 96% per update. Range across 8 release pairs: 0.9% (small fixes) to 8.1% (big features).](/size-comparison.svg)
+<img
+  src={`${import.meta.env.BASE_URL.replace(/\/$/, "")}/size-comparison.svg`}
+  alt="Measured on getsentry/cli 0.29.0 to 0.39.0. The typical (median) patch is 4.0% the size of the full gzipped binary — 1.32 MB versus 31.38 MB, saving 96% per update. Range across 8 release pairs: 0.9% (small fixes) to 8.1% (big features)."
+/>
 
 Measured on 8 adjacent `getsentry/cli` release pairs
 ([0.29.0 → 0.39.0](https://github.com/getsentry/cli/releases)) — the
@@ -67,7 +70,10 @@ Action.
 
 ## How an update flows
 
-![How an update flows: CI produces a patch from the old binary and publishes it to a registry; the user's binary downloads it (in parallel with any chain hops) and applies it to reconstruct the new binary.](/flow.svg)
+<img
+  src={`${import.meta.env.BASE_URL.replace(/\/$/, "")}/flow.svg`}
+  alt="How an update flows: CI produces a patch from the old binary and publishes it to a registry; the user's binary downloads it (in parallel with any chain hops) and applies it to reconstruct the new binary."
+/>
 
 The user downloads kilobytes instead of megabytes. Your CI does the heavy
 lifting once.
