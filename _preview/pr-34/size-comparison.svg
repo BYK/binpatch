@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" font-family="ui-sans-serif, -apple-system, 'Segoe UI', sans-serif" role="img" aria-label="Binary delta update comparison: a binpatch patch is 8.1% the size of the full gzipped binary (2.58 MB vs 31.83 MB for the getsentry/cli 0.38.0 to 0.39.0 update of sentry-linux-x64). At 10 Mbps broadband the full download takes about 27 seconds; the patch download plus apply takes about 2 seconds.">
+  <style>
+    .ink { fill: #14171c; }
+    .ink-muted { fill: #14171c; opacity: 0.55; }
+    .stroke { stroke: #14171c; }
+    .stroke-faint { stroke: #14171c; opacity: 0.3; }
+    .bar-full { fill: #14171c; opacity: 0.85; }
+    .bar-patch { fill: #d97706; }
+    .pill-bg { fill: #efece4; }
+    .grid { stroke: #14171c; opacity: 0.08; }
+    @media (prefers-color-scheme: dark) {
+      .ink { fill: #e6e8eb; }
+      .ink-muted { fill: #e6e8eb; opacity: 0.55; }
+      .stroke { stroke: #e6e8eb; }
+      .stroke-faint { stroke: #e6e8eb; opacity: 0.3; }
+      .bar-full { fill: #e6e8eb; opacity: 0.75; }
+      .bar-patch { fill: #f59e0b; }
+      .pill-bg { fill: #1c2026; }
+      .grid { stroke: #e6e8eb; opacity: 0.08; }
+    }
+  </style>
+
+  <!-- Header -->
+  <text x="40" y="44" font-size="12" font-weight="600" class="ink-muted" letter-spacing="0.08em">SIZE  +  TIME  COMPARISON</text>
+  <text x="40" y="80" font-size="26" font-weight="700" class="ink">One update. <tspan fill="#d97706">8% of the bytes.</tspan></text>
+  <text x="40" y="106" font-size="14" class="ink-muted">getsentry/cli 0.38.0 → 0.39.0, sentry-linux-x64 · measured by bench/sentry-cli-bench.mjs</text>
+
+  <!-- Y-axis labels -->
+  <text x="40" y="170" font-size="13" font-weight="600" class="ink">Full binary (.gz)</text>
+  <text x="40" y="232" font-size="13" font-weight="600" class="ink">Patch (binpatch)</text>
+
+  <!-- Grid: 0, 8, 16, 24, 32 MB -->
+  <g class="grid" stroke-width="1">
+    <line x1="170" y1="120" x2="170" y2="260"/>
+    <line x1="305" y1="120" x2="305" y2="260"/>
+    <line x1="440" y1="120" x2="440" y2="260"/>
+    <line x1="575" y1="120" x2="575" y2="260"/>
+    <line x1="710" y1="120" x2="710" y2="260"/>
+  </g>
+
+  <!-- X-axis labels -->
+  <text x="170" y="282" text-anchor="middle" font-size="11" class="ink-muted">0</text>
+  <text x="305" y="282" text-anchor="middle" font-size="11" class="ink-muted">8</text>
+  <text x="440" y="282" text-anchor="middle" font-size="11" class="ink-muted">16</text>
+  <text x="575" y="282" text-anchor="middle" font-size="11" class="ink-muted">24</text>
+  <text x="710" y="282" text-anchor="middle" font-size="11" class="ink-muted">32 MB</text>
+
+  <!-- Full binary bar: 31.83 MB → 170 + (31.83/32)*540 ≈ 707 -->
+  <rect x="170" y="148" width="537" height="36" rx="6" class="bar-full"/>
+  <text x="715" y="172" text-anchor="end" font-size="15" font-weight="600" fill="#f7f5f0">31.83 MB</text>
+
+  <!-- Patch bar: 2.58 MB → 170 + (2.58/32)*540 ≈ 214 -->
+  <rect x="170" y="210" width="44" height="36" rx="6" class="bar-patch"/>
+  <text x="226" y="234" font-size="15" font-weight="600" fill="#d97706">2.58 MB</text>
+
+  <!-- Savings callout (top right) -->
+  <g transform="translate(580, 138)">
+    <rect x="0" y="0" width="180" height="58" rx="10" class="pill-bg"/>
+    <text x="90" y="24" text-anchor="middle" font-size="11" font-weight="600" class="ink-muted" letter-spacing="0.06em">SAVED PER UPDATE</text>
+    <text x="90" y="46" text-anchor="middle" font-size="20" font-weight="700" fill="#d97706">29.25 MB · 92%</text>
+  </g>
+
+  <!-- Divider -->
+  <line x1="40" y1="312" x2="760" y2="312" class="stroke-faint" stroke-width="1"/>
+
+  <!-- Time panel header -->
+  <text x="40" y="340" font-size="12" font-weight="600" class="ink-muted" letter-spacing="0.08em">TIME TO INSTALL  ·  AT DIFFERENT BANDWIDTHS</text>
+
+  <!-- Speed columns -->
+  <g font-size="13" class="ink">
+    <!-- 5 Mbps -->
+    <text x="40" y="372" font-weight="600">5 Mbps</text>
+    <text x="40" y="394" class="ink-muted" font-size="12">slow rural / cellular edge</text>
+    <text x="220" y="372" font-weight="600" fill="#14171c" class="ink">full <tspan font-weight="700">~53 s</tspan></text>
+    <text x="220" y="394" fill="#d97706" font-weight="700" class="ink">patch + apply <tspan font-weight="700">~4 s</tspan></text>
+
+    <!-- 25 Mbps -->
+    <text x="400" y="372" font-weight="600">25 Mbps</text>
+    <text x="400" y="394" class="ink-muted" font-size="12">typical home broadband</text>
+    <text x="580" y="372" font-weight="600" class="ink">full <tspan font-weight="700">~11 s</tspan></text>
+    <text x="580" y="394" fill="#d97706" font-weight="700" class="ink">patch + apply <tspan font-weight="700">~2 s</tspan></text>
+  </g>
+</svg>
