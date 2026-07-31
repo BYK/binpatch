@@ -222,10 +222,12 @@ not that the underlying fd has been released at the kernel level. On
 Linux, <code dir="auto">execve</code> checks the kernel’s open-fd table; if any fd is still
 open for write to the target file, <code dir="auto">execve</code> returns <code dir="auto">ETXTBSY</code>. The
 window between the <code dir="auto">finish</code> callback and the kernel fd release is
-small but non-zero — enough to intermittently break self-updates that
-chain <code dir="auto">applyPatchChainInMemory</code> immediately into a <code dir="auto">spawn</code> of the
-result. We sidestep it by using <code dir="auto">fs.openSync</code> + <code dir="auto">fs.writeSync</code> +
-<code dir="auto">fs.closeSync</code> instead of the stream API.</p>
+small but non-zero — wide enough to intermittently break self-updates
+that chain <code dir="auto">applyPatchChainInMemory</code> immediately into a <code dir="auto">spawn</code> of
+the result (observed at ~5-50% reproduction in standalone Node
+repros against the pre-fix code). We sidestep it by using
+<code dir="auto">fs.openSync</code> + <code dir="auto">fs.writeSync</code> + <code dir="auto">fs.closeSync</code> instead of the stream
+API.</p>
 <div class="sl-heading-wrapper level-h2"><h2 id="next">Next</h2><a class="sl-anchor-link" href="#next"><span aria-hidden="true" class="sl-anchor-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="m12.11 15.39-3.88 3.88a2.52 2.52 0 0 1-3.5 0 2.47 2.47 0 0 1 0-3.5l3.88-3.88a1 1 0 1 0-1.42-1.42l-3.88 3.89a4.48 4.48 0 0 0 6.33 6.33l3.89-3.88a1 1 0 0 0-1.42-1.42m8.58-12.08a4.49 4.49 0 0 0-6.33 0l-3.89 3.88a1 1 0 1 0 1.42 1.42l3.88-3.88a2.52 2.52 0 0 1 3.5 0 2.47 2.47 0 0 1 0 3.5l-3.88 3.88a1 1 0 0 0 0 1.42 1 1 0 0 0 1.42 0l3.88-3.89a4.49 4.49 0 0 0 0-6.33M8.83 15.17a1 1 0 0 0 .71.29 1 1 0 0 0 .71-.29l4.92-4.92a1 1 0 1 0-1.42-1.42l-4.92 4.92a1 1 0 0 0 0 1.42"></path></svg></span><span class="sr-only" data-pagefind-ignore>Section titled “Next”</span></a></div>
 <ul>
 <li><a href="/wire-contract/">Wire Contract →</a> — exact file format and tag scheme</li>
