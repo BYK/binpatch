@@ -18,7 +18,7 @@
  */
 
 import { createHash } from "node:crypto";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -532,5 +532,54 @@ describe("applyPatchChainInMemory", () => {
     await expect(
       applyPatchChainInMemory(oldPath, [], join(WORK_DIR, "out.bin")),
     ).rejects.toThrow(/empty patch chain/);
+  });
+
+  it("releases the output fd synchronously so a follow-up spawn does not hit ETXTBSY", async () => {
+    // Regression for fd-leak via createWriteStream: the stream's end() resolves
+    // on 'finish' (data flushed) but the kernel fd release is async, so a
+    // subsequent spawn() of the output file on Linux fails with ETXTBSY
+    // ("text file busy") in a small but reproducible race window.
+    // applyReaderToFile now uses fs.openSync + fs.writeSync + fs.closeSync
+    // to close the fd synchronously, eliminating the window.
+    //
+    // We can't make spawn deterministically hit the bug (it's a race), but we
+    // CAN verify the new behavior: after apply returns, no fd in this process
+    // points to the output file. That's the property the fix guarantees, and
+    // it directly implies "subsequent execve will not hit ETXTBSY".
+    const total = 4096;
+    const payload = Buffer.alloc(total, 0x42);
+
+    // Patch: write the payload as-is to destPath (no diff, no seek).
+    const old = Buffer.alloc(total);
+    const patch = buildPatch({
+      control: ctrl(0, total, 0),
+      diff: Buffer.alloc(0),
+      extra: payload,
+      newSize: total,
+    });
+
+    const oldPath = writeTemp("fd-old.bin", old);
+    const destPath = join(WORK_DIR, "fd-new.bin");
+    const hash = await applyPatchChainInMemory(oldPath, [patch], destPath);
+    expect(hash).toBe(sha256(payload));
+
+    // After apply returns, the destPath fd MUST NOT appear in /proc/self/fd.
+    // On Linux, /proc/self/fd/N is a symlink to the path the fd points at —
+    // so any fd still open to destPath will show up here. resolveSymlinks
+    // normalizes both sides since /proc/self/fd resolves realpath on the
+    // symlink target.
+    if (process.platform === "linux") {
+      const { readdirSync, realpathSync } = await import("node:fs");
+      const canonicalDest = realpathSync(destPath);
+      const fdDir = readdirSync("/proc/self/fd");
+      const lingering = fdDir.filter((entry) => {
+        try {
+          return realpathSync(`/proc/self/fd/${entry}`) === canonicalDest;
+        } catch {
+          return false;
+        }
+      });
+      expect(lingering).toEqual([]);
+    }
   });
 });
