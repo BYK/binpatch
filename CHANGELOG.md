@@ -5,6 +5,64 @@ All notable changes to `binpatch` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.4.0
+
+### New Features ✨
+
+- Real-repo upgrade — Craft release, Astro docs site, polished README by @BYK in [#6](https://github.com/BYK/binpatch/pull/6)
+
+### Bug Fixes 🐛
+
+#### Ci
+
+- Link-check downloads dist/ artifact from build job by @BYK in [#28](https://github.com/BYK/binpatch/pull/28)
+- Untitaker/hyperlink tags use no `v` prefix by @BYK in [#26](https://github.com/BYK/binpatch/pull/26)
+- Switch link-check from broken python -m hyperlink to untitaker/hyperlink action by @BYK in [#25](https://github.com/BYK/binpatch/pull/25)
+- Run test+pack on release/* branches; add CHANGELOG.md by @BYK in [#15](https://github.com/BYK/binpatch/pull/15)
+
+#### Pages
+
+- Revert enablement:true (App lacks Pages-create permission) by @BYK in [#9](https://github.com/BYK/binpatch/pull/9)
+- Auto-enable GitHub Pages via the API by @BYK in [#8](https://github.com/BYK/binpatch/pull/8)
+
+#### Website
+
+- Fix flow.svg crop + add dark-mode styles by @BYK in [#33](https://github.com/BYK/binpatch/pull/33)
+- Convert broken ./<slug>/ refs to root-relative /<slug>/ by @BYK in [#31](https://github.com/BYK/binpatch/pull/31)
+- SVG for the home-page flow diagram; reword Bun/mmap rationale by @BYK in [#18](https://github.com/BYK/binpatch/pull/18)
+- Correct API mismatches across all 15 docs pages by @BYK in [#7](https://github.com/BYK/binpatch/pull/7)
+
+#### Other
+
+- (apply) Close output fd synchronously to avoid ETXTBSY on subsequent spawn by @BYK in [#37](https://github.com/BYK/binpatch/pull/37)
+- (publish) Rewrite to Craft-driven publish on accepted label by @BYK in [#12](https://github.com/BYK/binpatch/pull/12)
+
+### Documentation 📚
+
+#### Website
+
+- Rebrand homepage around 'any binary' + raw .md endpoint by @BYK in [#36](https://github.com/BYK/binpatch/pull/36)
+- Cleaner home-page flow SVG; name bundlers in When to use by @BYK in [#23](https://github.com/BYK/binpatch/pull/23)
+- Add favicon (SVG + 32 PNG + 180 apple-touch) by @BYK in [#21](https://github.com/BYK/binpatch/pull/21)
+- Rebrand — tell the BinPatch story, drop the Craft clone look by @BYK in [#17](https://github.com/BYK/binpatch/pull/17)
+
+#### Other
+
+- (home) Name the binaries we update (Bun, Deno, SEA, yao-pkg, esbuild, fossilize) by @BYK in [#20](https://github.com/BYK/binpatch/pull/20)
+- (readme) Point docs link at custom domain by @BYK in [#22](https://github.com/BYK/binpatch/pull/22)
+
+### Internal Changes 🔧
+
+#### Website
+
+- Link-check warning-only — Starlight pagination floods report by @BYK in [#29](https://github.com/BYK/binpatch/pull/29)
+- Add hyperlink link-check job by @BYK in [#24](https://github.com/BYK/binpatch/pull/24)
+
+#### Other
+
+- (craft) Add github target so releases cut a GH release alongside npm by @BYK in [#38](https://github.com/BYK/binpatch/pull/38)
+- (deps) Bump the npm_and_yarn group across 1 directory with 3 updates by @dependabot in [#11](https://github.com/BYK/binpatch/pull/11)
+
 ## [Unreleased]
 
 ### Fixed
