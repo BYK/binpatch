@@ -16,6 +16,7 @@ controls we ship by default, and what you must add on top.
 | Network attacker on TLS path | Stall blob downloads indefinitely | Per-HTTP `AbortSignal.timeout(30_000)` |
 | Attacker on your user's machine | Swap the old binary to a smaller file mid-apply | Apply reads from in-memory `Uint8Array`, not the file |
 | Attacker with a custom-CA TLS interception | Re-route your OCI requests to a fake registry | `OciClient` and `ghcrSource` accept an injected `fetch` — pass your TLS-aware fetch (e.g. `undici` with a custom `Agent` and your CA bundle) |
+| **Compromised publish pipeline** | Publish a patch whose `from-version` annotation claims source A but whose bytes were actually generated from source B — silently bypasses the user's expected upgrade path | `binpatch` **cannot** detect this — see [`from-version` annotation trust](#from-version-annotation-trust) below. Your CI MUST guarantee the annotation matches the actual patch source. |
 
 ## SHA-256 verification (sole trust anchor)
 
@@ -120,6 +121,47 @@ stalled Azure redirect (or similar) cannot hang the apply.
   etc.). See [Custom fetch / CA](/custom-fetch/).
 - **Sandboxing the apply** — if you don't trust the patch data,
   run `resolveAndApply` in a worker thread with limited memory.
+
+## `from-version` annotation trust
+
+The OCI patch manifest carries a `from-version=<prev>` annotation that
+chain discovery uses to walk backward from the target version to the
+user's current version. **This annotation is a chain pointer, not a
+content hash** — `applyPatchChainInMemory` only verifies the final
+output's SHA-256. The library cannot detect a bug where the annotation
+claims source `A` but the patch bytes were generated from source `B`.
+A user at `A` would then receive a "patch" that silently produces a
+different binary.
+
+**Your CI must guarantee the annotation matches the actual patch
+source.** Recomputing the previous tag independently in two CI jobs
+(e.g. a `generate-patches` job and a `publish-nightly` job) is a
+recipe for this exact bug — the two jobs can disagree if the tag list
+state changes between them (e.g. a concurrent push), the sort comparator
+mismatches what the upstream semver used, or a manual republish reuses
+the same tag. Pass the source version from the job that actually
+generated the bytes (artifact file, env var, or shared step output),
+not from a re-derived tag listing.
+
+## Output fd release
+
+`applyReaderToFile` writes the patched binary to `destPath` and closes
+the file descriptor **synchronously** before returning. Consumers can
+immediately `spawn` (or otherwise `execve`) the output file without
+risking `ETXTBSY` ("text file busy").
+
+Why this matters: Node's `fs.createWriteStream(path).end()` callback
+fires on the `'finish'` event — which signals data has been flushed,
+not that the underlying fd has been released at the kernel level. On
+Linux, `execve` checks the kernel's open-fd table; if any fd is still
+open for write to the target file, `execve` returns `ETXTBSY`. The
+window between the `finish` callback and the kernel fd release is
+small but non-zero — wide enough to intermittently break self-updates
+that chain `applyPatchChainInMemory` immediately into a `spawn` of
+the result (observed at ~5-50% reproduction in standalone Node
+repros against the pre-fix code). We sidestep it by using
+`fs.openSync` + `fs.writeSync` + `fs.closeSync` instead of the stream
+API.
 
 ## Next
 

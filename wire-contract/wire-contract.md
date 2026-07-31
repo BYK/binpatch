@@ -68,7 +68,7 @@ Manifest annotation:
 | `<repo>:patch-<version>` | Manifest for version `<version>`, pointing back to previous version via `from-version` annotation. |
 
 Manifest annotations:
-- `from-version=<prevVersion>` — chain back-pointer
+- `from-version=<prevVersion>` — chain back-pointer. **This is a pointer, not a content hash** — the library verifies only the final output SHA. The publish pipeline MUST guarantee the annotation matches the actual patch source. See [Security → `from-version` annotation trust](/security/#from-version-annotation-trust).
 - `sha256-<binaryName>=<hex-sha256-of-uncompressed-new-binary>` — integrity anchor
 - `org.opencontainers.image.title` (per layer) = `<binaryName>.patch`
 

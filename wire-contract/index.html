@@ -191,7 +191,7 @@ would otherwise force a pre-verification OOM.</p>
 </table>
 <p>Manifest annotations:</p>
 <ul>
-<li><code dir="auto">from-version=&lt;prevVersion&gt;</code> — chain back-pointer</li>
+<li><code dir="auto">from-version=&lt;prevVersion&gt;</code> — chain back-pointer. <strong>This is a pointer, not a content hash</strong> — the library verifies only the final output SHA. The publish pipeline MUST guarantee the annotation matches the actual patch source. See <a href="/security/#from-version-annotation-trust">Security → <code dir="auto">from-version</code> annotation trust</a>.</li>
 <li><code dir="auto">sha256-&lt;binaryName&gt;=&lt;hex-sha256-of-uncompressed-new-binary&gt;</code> — integrity anchor</li>
 <li><code dir="auto">org.opencontainers.image.title</code> (per layer) = <code dir="auto">&lt;binaryName&gt;.patch</code></li>
 </ul>
