@@ -32,3 +32,11 @@ targets:
   - name: npm
     access: public
     oidc: true
+  - name: github
+    config:
+      artifacts:
+        CI:
+          - npm-tarball
+    release:
+      exclude_commit_patterns:
+        - "^Release .+ v[0-9].+"
