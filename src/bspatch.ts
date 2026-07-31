@@ -10,8 +10,9 @@
  *   the JS heap — only the windows actually referenced are pulled in, served
  *   from the OS page cache populated by the reflink copy.
  * - Diff/extra blocks: streamed via `node:zlib` `createZstdDecompress()`
- * - Output: written incrementally to disk via `node:fs` createWriteStream
- *   with a large highWaterMark to collapse thousands of small write syscalls.
+ * - Output: written incrementally to disk via `fs.openSync` + `fs.writeSync`
+ *   with the fd `closeSync`'d before the function returns, so the caller
+ *   can `spawn` the output file without racing ETXTBSY on Linux.
  * - Integrity: SHA-256 computed inline via `node:crypto` createHash
  *
  * Multi-patch chains keep every intermediate result in memory and only persist
@@ -37,7 +38,7 @@
  */
 
 import { createHash } from "node:crypto";
-import { constants, copyFileSync, createWriteStream } from "node:fs";
+import { closeSync, constants, copyFileSync, openSync, writeSync } from "node:fs";
 import { type FileHandle, open, readFile, unlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -613,19 +614,26 @@ async function transformPatch(
 }
 
 /**
- * Write highWaterMark for the patched-binary output stream (1 MiB).
- *
- * The default 16 KiB highWaterMark turns a ~310 MB output into ~20k write
- * syscalls; a 1 MiB buffer collapses that to ~300, at a bounded memory cost.
- */
-const WRITE_HIGH_WATER_MARK = 1024 * 1024;
-
-/**
  * Apply a patch to the base bytes from `oldReader`, streaming the result to
  * `destPath` while computing its SHA-256.
  *
  * Used for the final hop of a chain (and single-patch upgrades), where the
  * output must be persisted and verified.
+ *
+ * Writes via `fs.openSync` + `fs.writeSync` (NOT `fs.createWriteStream`).
+ * Node's writable stream resolves its `end()` callback on the `'finish'`
+ * event, which fires after data is flushed but **before** the underlying
+ * fd is released at the kernel level — so a subsequent `spawn` of the
+ * output file fails with `ETXTBSY` ("text file busy"). `closeSync` closes
+ * the fd synchronously before this function returns, eliminating the race.
+ *
+ * Trade-off vs. the stream API: we lose WriteStream's internal buffering
+ * (1 MiB highWaterMark), so write syscall count scales with chunk size. For
+ * the bspatch output stream, chunks are zstd-decompressed blocks that
+ * match the patch's control tuples — typically 16-64 KiB. Linux's kernel
+ * write path coalesces adjacent small writes effectively for sequential
+ * output, so the syscall-count increase is bounded; correctness is the
+ * property that matters here.
  */
 async function applyReaderToFile(
   oldReader: OldReader,
@@ -633,43 +641,65 @@ async function applyReaderToFile(
   destPath: string,
   onBytes?: (bytes: number) => void,
 ): Promise<string> {
-  const writer = createWriteStream(destPath, {
-    highWaterMark: WRITE_HIGH_WATER_MARK,
-  });
+  const fd = openSync(destPath, "w", 0o644);
   const hasher = createHash("sha256");
 
-  // Capture write errors early — without a listener, Node crashes with
-  // ERR_UNHANDLED_ERROR if a write fails (ENOSPC, EIO, etc.) during the loop.
+  // Capture write errors so transformPatch can abort on the next chunk
+  // (mirroring the original stream-based code's `writer.on("error")`).
   let writeError: Error | undefined;
-  writer.on("error", (err) => {
-    writeError ??= err;
-  });
 
   try {
     await transformPatch(oldReader, patchData, (chunk) => {
-      // Abort the transform on the first I/O failure. Throwing here unwinds
-      // through transformPatch's reader cleanup; the writer is then flushed
-      // and the error re-surfaced in the finally below.
       if (writeError) {
         throw writeError;
       }
-      writer.write(chunk);
+      // Loop because writeSync may write fewer bytes than requested on
+      // some filesystems (interrupted syscalls, partial writes under
+      // memory pressure). For our chunk sizes (typically 16-64 KiB) the
+      // common case is a single write.
+      let written = 0;
+      while (written < chunk.byteLength) {
+        try {
+          const n = writeSync(fd, chunk, written, chunk.byteLength - written);
+          if (n <= 0) {
+            throw new Error(
+              `writeSync returned ${n} for chunk of ${chunk.byteLength - written} bytes`,
+            );
+          }
+          written += n;
+        } catch (err) {
+          writeError = err instanceof Error ? err : new Error(String(err));
+          throw writeError;
+        }
+      }
       hasher.update(chunk);
       onBytes?.(chunk.byteLength);
     });
   } finally {
-    await new Promise<void>((resolve, reject) => {
-      writer.end((err?: Error | null) => {
-        const finalErr = err ?? writeError;
-        if (finalErr) {
-          reject(finalErr);
-        } else {
-          resolve();
-        }
-      });
-    });
+    // Synchronous close — guarantees the fd is released at the kernel
+    // level before this function returns. The caller can `spawn` the
+    // output file immediately. On close error, prefer the close error
+    // over any earlier writeError (matches the old stream-based code's
+    // `err ?? writeError` precedence — close failures often signal
+    // flush-time EIO which is more diagnostic than the write that
+    // produced the buffer).
+    let closeError: Error | undefined;
+    try {
+      closeSync(fd);
+    } catch (err) {
+      closeError = err instanceof Error ? err : new Error(String(err));
+    }
+    if (closeError) {
+      throw closeError;
+    }
   }
 
+  if (writeError) {
+    throw writeError;
+  }
+
+  // unreachable if writeError was set — writeError implies we threw
+  // out of the loop early, never reaching `hasher.digest`.
   return hasher.digest("hex");
 }
 

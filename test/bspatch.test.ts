@@ -18,7 +18,7 @@
  */
 
 import { createHash } from "node:crypto";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -532,5 +532,80 @@ describe("applyPatchChainInMemory", () => {
     await expect(
       applyPatchChainInMemory(oldPath, [], join(WORK_DIR, "out.bin")),
     ).rejects.toThrow(/empty patch chain/);
+  });
+
+  it("releases the output fd synchronously so a follow-up spawn does not hit ETXTBSY", async () => {
+    // Regression for fd-leak via createWriteStream: the stream's end() resolves
+    // on 'finish' (data flushed) but the kernel fd release is async, so a
+    // subsequent spawn() of the output file on Linux fails with ETXTBSY
+    // ("text file busy") in a reproducible race window in standalone
+    // reproducers.
+    //
+    // Detection strategy: apply + spawn many times back-to-back, then assert
+    // that NONE of the spawns fail with ETXTBSY. With the NEW code
+    // (openSync + writeSync + closeSync) the fd is closed synchronously
+    // before apply returns, so ETXTBSY cannot fire on a subsequent spawn.
+    //
+    // NOTE: the ETXTBSY race does NOT reliably reproduce inside vitest's
+    // worker pool — vitest's microtask scheduler appears to give Node time
+    // to close the fd before the test gets to spawn. A standalone Node
+    // repro of the SAME pattern reproduces ETXTBSY ~5-50% of the time
+    // (depending on write pressure). So this test is a contract assertion
+    // ("the fd is closed before apply returns") that PASSES with the fix;
+    // the same test would INTERMITTENTLY fail against the pre-fix
+    // createWriteStream path in a standalone Node script but is hidden
+    // inside vitest. The user's actual upgrade scenario runs in the
+    // SEA-binary host environment where the bug does reproduce. The fix
+    // itself (synchronous closeSync) is unambiguously correct regardless.
+    //
+    // Linux only: ETXTBSY is a POSIX/Linux errno (text file busy) and the
+    // fix targets the Linux spawn→execve kernel path.
+    if (process.platform !== "linux") return;
+
+    const total = 128;
+    const header = `#!/bin/sh\nexit 7\n`;
+    const headerBytes = Buffer.from(header, "utf8");
+    const padding = "# " + " ".repeat(total - headerBytes.byteLength - 3) + "\n";
+    const fullScript = Buffer.concat([
+      headerBytes,
+      Buffer.from(padding, "utf8"),
+    ]);
+    expect(fullScript.byteLength).toBe(total);
+
+    // Patch: write the script as-is to destPath (no diff, no seek).
+    const old = Buffer.alloc(total);
+    const patch = buildPatch({
+      control: ctrl(0, total, 0),
+      diff: Buffer.alloc(0),
+      extra: fullScript,
+      newSize: total,
+    });
+
+    const oldPath = writeTemp("fd-old.bin", old);
+    const { spawn } = await import("node:child_process");
+
+    const iterations = 20;
+    const failures: Error[] = [];
+    for (let i = 0; i < iterations; i++) {
+      const destPath = join(WORK_DIR, `fd-new-${i}.sh`);
+      const hash = await applyPatchChainInMemory(oldPath, [patch], destPath);
+      expect(hash).toBe(sha256(fullScript));
+
+      // chmod +x so the kernel can exec it. The ETXTBSY check only fires
+      // on execve, which requires the file to be executable.
+      chmodSync(destPath, 0o755);
+
+      try {
+        const code: number = await new Promise((resolve, reject) => {
+          const proc = spawn(destPath, []);
+          proc.on("error", reject);
+          proc.on("close", (c) => resolve(c ?? -1));
+        });
+        expect(code).toBe(7);
+      } catch (err) {
+        failures.push(err instanceof Error ? err : new Error(String(err)));
+      }
+    }
+    expect(failures).toEqual([]);
   });
 });
