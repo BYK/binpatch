@@ -14,12 +14,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   resolves the `end` callback on the `'finish'` event (data flushed) but the
   underlying fd can still be held at the kernel level after the callback
   fires. On Linux, a subsequent `spawn` (which calls `execve`) of the output
-  file then fails with `ETXTBSY` ("text file busy") — the `fs.writeFile`
-  pattern closes the fd synchronously before returning, which is why the
-  bug only surfaced after a delta fallback to full-download. Replaced with
-  `fs.openSync` + `fs.writeSync` + `fs.closeSync`. See the [Security →
-  /security/#output-fd-release](/security/#output-fd-release) page for the
-  new guarantee.
+  file then intermittently fails with `ETXTBSY` ("text file busy") — the
+  `fs.writeFile` pattern closes the fd synchronously before returning,
+  which is why the bug only surfaced in environments where full-download
+  fallback to `streamDecompressToFile` chained immediately into a spawn.
+  Replaced with `fs.openSync` + `fs.writeSync` + `fs.closeSync`. See the
+  [Security → /security/#output-fd-release](/security/#output-fd-release)
+  page for the new guarantee.
 
 ### Documentation
 

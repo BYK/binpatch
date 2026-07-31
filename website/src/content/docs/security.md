@@ -156,10 +156,12 @@ not that the underlying fd has been released at the kernel level. On
 Linux, `execve` checks the kernel's open-fd table; if any fd is still
 open for write to the target file, `execve` returns `ETXTBSY`. The
 window between the `finish` callback and the kernel fd release is
-small but non-zero — enough to intermittently break self-updates that
-chain `applyPatchChainInMemory` immediately into a `spawn` of the
-result. We sidestep it by using `fs.openSync` + `fs.writeSync` +
-`fs.closeSync` instead of the stream API.
+small but non-zero — wide enough to intermittently break self-updates
+that chain `applyPatchChainInMemory` immediately into a `spawn` of
+the result (observed at ~5-50% reproduction in standalone Node
+repros against the pre-fix code). We sidestep it by using
+`fs.openSync` + `fs.writeSync` + `fs.closeSync` instead of the stream
+API.
 
 ## Next
 

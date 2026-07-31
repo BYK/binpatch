@@ -11,7 +11,8 @@
  *   from the OS page cache populated by the reflink copy.
  * - Diff/extra blocks: streamed via `node:zlib` `createZstdDecompress()`
  * - Output: written incrementally to disk via `fs.openSync` + `fs.writeSync`
- *   with a large highWaterMark to collapse thousands of small write syscalls.
+ *   with the fd `closeSync`'d before the function returns, so the caller
+ *   can `spawn` the output file without racing ETXTBSY on Linux.
  * - Integrity: SHA-256 computed inline via `node:crypto` createHash
  *
  * Multi-patch chains keep every intermediate result in memory and only persist
@@ -677,13 +678,19 @@ async function applyReaderToFile(
   } finally {
     // Synchronous close — guarantees the fd is released at the kernel
     // level before this function returns. The caller can `spawn` the
-    // output file immediately.
+    // output file immediately. On close error, prefer the close error
+    // over any earlier writeError (matches the old stream-based code's
+    // `err ?? writeError` precedence — close failures often signal
+    // flush-time EIO which is more diagnostic than the write that
+    // produced the buffer).
+    let closeError: Error | undefined;
     try {
       closeSync(fd);
     } catch (err) {
-      if (!writeError) {
-        writeError = err instanceof Error ? err : new Error(String(err));
-      }
+      closeError = err instanceof Error ? err : new Error(String(err));
+    }
+    if (closeError) {
+      throw closeError;
     }
   }
 
@@ -691,6 +698,8 @@ async function applyReaderToFile(
     throw writeError;
   }
 
+  // unreachable if writeError was set — writeError implies we threw
+  // out of the loop early, never reaching `hasher.digest`.
   return hasher.digest("hex");
 }
 
