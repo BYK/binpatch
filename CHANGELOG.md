@@ -5,6 +5,16 @@ All notable changes to `binpatch` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.4.1
+
+### Bug Fixes 🐛
+
+- (action) Accept from-version input on publish-ghcr by @BYK in [#41](https://github.com/BYK/binpatch/pull/41)
+
+### Internal Changes 🔧
+
+- Merge release/0.4.0 back to main by @BYK in [#42](https://github.com/BYK/binpatch/pull/42)
+
 ## 0.4.0
 
 ### New Features ✨
