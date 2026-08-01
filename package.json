@@ -1,6 +1,6 @@
 {
   "name": "binpatch",
-  "version": "0.4.0",
+  "version": "0.4.2",
   "type": "module",
   "license": "MIT",
   "description": "Reusable binary delta-update engine: apply TRDIFF10/bsdiff+zstd patch chains to a binary and discover chains from a pluggable source (OCI/GHCR or GitHub Releases). Pure Node, zero product coupling.",
