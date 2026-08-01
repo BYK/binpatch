@@ -128,6 +128,18 @@ inputs:
       published. Set 'true' to make patch-push failures fatal.
     required: false
     default: "false"
+  from-version:
+    description: >-
+      publish-ghcr: the previous version the patches were generated against.
+      When set, the annotation on the pushed patch manifest uses THIS value
+      verbatim instead of re-deriving it from the registry. Pass this from
+      generate-ghcr.outputs.from-version to guarantee the annotation matches
+      the actual patch source -- `binpatch` only verifies the final output
+      SHA, so a wrong annotation makes the patch invisible to any user whose
+      chain doesn't include the annotated source. Re-derivation is kept as
+      the back-compat fallback when this input is empty.
+    required: false
+    default: ""
   github-token:
     description: "Token for registry login and GitHub Release API access."
     required: false
@@ -414,6 +426,7 @@ runs:
         PATCHES_DIR: ${{ inputs.patches-dir }}
         BINARIES_DIR: ${{ inputs.binaries-dir }}
         PATCH_PUSH_FATAL: ${{ inputs.patch-push-fatal }}
+        FROM_VERSION: ${{ inputs.from-version }}
       run: |
         set -uo pipefail
         FULL_REPO="${REGISTRY}/${REPO}"
@@ -445,19 +458,40 @@ runs:
             return 0
           fi
 
-          # Find from-version by listing versioned nightly tags.
-          local TAGS PREV_TAG="" tag PREV_VERSION
-          TAGS=$(oras repo tags "${FULL_REPO}" 2>/dev/null | grep "^${NIGHTLY_TAG_PREFIX}[0-9]" | sort -V || echo "")
-          for tag in $TAGS; do
-            if [ "$tag" = "${NIGHTLY_TAG_PREFIX}${VERSION}" ]; then break; fi
-            PREV_TAG="$tag"
-          done
-
-          if [ -z "$PREV_TAG" ]; then
-            echo "No previous nightly tag found, skipping patch push"
-            return 0
+          # Resolve from-version. Prefer the caller-supplied value (typically
+          # from-version from a sibling generate-ghcr invocation), since
+          # generate-ghcr is what actually downloaded the source binary and
+          # ran bsdiff — re-deriving from the registry here can disagree
+          # with the source the bytes were generated from if the registry
+          # state changed between the two steps (concurrent push, semver
+          # re-ordering, etc.). The `binpatch` library verifies only the
+          # final output SHA, so a wrong annotation makes the patch useless
+          # to any user whose chain doesn't include the annotated source.
+          # Falls back to registry re-derive when the input is empty for
+          # back-compat with workflows that haven't threaded the value.
+          local PREV_VERSION=""
+          if [ -n "${FROM_VERSION:-}" ]; then
+            PREV_VERSION="${FROM_VERSION}"
+            echo "Using caller-supplied from-version: ${PREV_VERSION}"
+          else
+            # Re-derive by listing versioned nightly tags. Same caveats as
+            # the consumer-side script -- the build's own tag may not exist
+            # yet (publish-ghcr runs before/around the versioned-tag push),
+            # so the loop break may not trigger and the last tag in sort-V
+            # order can leak through.
+            local TAGS PREV_TAG="" tag
+            TAGS=$(oras repo tags "${FULL_REPO}" 2>/dev/null | grep "^${NIGHTLY_TAG_PREFIX}[0-9]" | sort -V || echo "")
+            for tag in $TAGS; do
+              if [ "$tag" = "${NIGHTLY_TAG_PREFIX}${VERSION}" ]; then break; fi
+              PREV_TAG="$tag"
+            done
+            if [ -z "$PREV_TAG" ]; then
+              echo "No previous nightly tag found, skipping patch push"
+              return 0
+            fi
+            PREV_VERSION="${PREV_TAG#"${NIGHTLY_TAG_PREFIX}"}"
+            echo "Re-derived from-version: ${PREV_VERSION} (consider passing from-version input from generate-ghcr)"
           fi
-          PREV_VERSION="${PREV_TAG#"${NIGHTLY_TAG_PREFIX}"}"
 
           cd "${PATCHES_DIR}" || return 1
           eval oras push "${FULL_REPO}:${PATCH_TAG_PREFIX}${VERSION}" \

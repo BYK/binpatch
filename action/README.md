@@ -65,8 +65,38 @@ overridden ones:
 | `patches-dir` | `patches` | Where patches are written / read. |
 | `binary-glob` | `*` | Selects binaries to diff (e.g. `lore-*`). |
 | `max-ratio` | `50` | Size-gate percentage. |
+| `from-version` | `""` | publish-ghcr: the previous version the patches diff against. Pass from `generate-ghcr.outputs.from-version` so the annotation matches the actual source. When empty, falls back to registry re-derive. |
 | `zig-bsdiff-version` / `zig-bsdiff-sha256` | pinned | Encoder, SHA-verified. |
 | `oras-version` / `oras-sha256` | pinned | OCI client, SHA-verified. |
+
+## `generate-ghcr` → `publish-ghcr` wiring
+
+The patch manifest's `from-version` annotation must match the actual source
+binary the bytes were generated from — `binpatch` verifies only the final
+output SHA. Wire the value from `generate-ghcr` to `publish-ghcr`:
+
+```yaml
+- uses: BYK/binpatch/action@vX.Y.Z
+  id: gen
+  with:
+    mode: generate-ghcr
+    version: ${{ steps.changes.outputs.nightly-version }}
+    repo: getsentry/cli
+    new-binaries-dir: ${{ steps.build.outputs.dir }}
+    new-gz-dir: ${{ steps.build.outputs.gz-dir }}
+
+- uses: BYK/binpatch/action@vX.Y.Z
+  if: steps.gen.outputs.has-patches == 'true'
+  with:
+    mode: publish-ghcr
+    version: ${{ steps.changes.outputs.nightly-version }}
+    repo: getsentry/cli
+    artifacts-dir: ${{ steps.build.outputs.gz-dir }}
+    binaries-dir: ${{ steps.build.outputs.dir }}
+    # CRITICAL: stamp the annotation with the value the generate step actually
+    # used, not a re-derivation of the registry state. See BYK/binpatch#40.
+    from-version: ${{ steps.gen.outputs.from-version }}
+```
 
 ## Outputs
 
