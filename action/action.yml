@@ -232,10 +232,28 @@ runs:
 
         echo "${GH_TOKEN_IN}" | oras login "${REGISTRY}" -u "${ACTOR}" --password-stdin
 
-        # Newest versioned nightly tag strictly older than the one being built.
+        # Newest versioned nightly tag strictly older than the one being built,
+        # restricted to the same major.minor series as the current build.
+        # Without this filter, `sort -V` orders every 0.41 nightly after every
+        # 0.40 nightly (0.41 > 0.40), and the loop below walks past all 0.40
+        # tags and onto the 0.41 tag — even though the current build hasn't
+        # pushed its own tag yet, so the `if [ "$tag" = ... ]` break never
+        # triggers. Result: PREV_TAG becomes the 0.41 nightly, and the patch
+        # is generated FROM the 0.41 binary and stamped with
+        # `from-version: 0.41.x-dev.Y` — useless to any user on the 0.40
+        # series. See getsentry/cli#1329 for the exact scenario.
         TAGS=$(oras repo tags "${FULL_REPO}" 2>/dev/null | grep "^${NIGHTLY_TAG_PREFIX}[0-9]" | sort -V || echo "")
+        # MAJOR_MINOR is e.g. "0.40" — restricts the loop to tags in the
+        # same series. First build of a new series falls through with
+        # PREV_TAG="" and the existing skip-empty-PREV path handles it.
+        MAJOR_MINOR=$(echo "${VERSION}" | cut -d. -f1,2)
+        # -F (fixed-string): the dot in MAJOR_MINOR is literal, not a regex
+        # metachar. In practice MAJOR_MINOR is always digits.digits and the
+        # upstream grep filters to ^nightly-[0-9], so this can't mis-match
+        # — but be defensive.
+        SAME_SERIES_TAGS=$(printf '%s\n' "$TAGS" | grep -F "${NIGHTLY_TAG_PREFIX}${MAJOR_MINOR}." || true)
         PREV_TAG=""
-        for tag in $TAGS; do
+        for tag in $SAME_SERIES_TAGS; do
           if [ "$tag" = "${NIGHTLY_TAG_PREFIX}${VERSION}" ]; then
             break
           fi
