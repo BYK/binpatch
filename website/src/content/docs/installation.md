@@ -16,14 +16,7 @@ shelled-out processes.
 ## Install
 
 ```bash
-# pnpm
 pnpm add binpatch
-
-# npm
-npm install binpatch
-
-# yarn
-yarn add binpatch
 ```
 
 ## TypeScript
