@@ -78,7 +78,7 @@ end-to-end generate-and-publish flow.
 `binpatch`. Install via:
 
 ```bash
-npm install binpatch
+pnpm add binpatch
 ```
 
 ## What's the difference between `applyPatch`, `applyPatchToMemory`, and `applyPatchChainInMemory`?

@@ -1,6 +1,7 @@
 {
   "name": "binpatch",
   "version": "0.4.0",
+  "packageManager": "pnpm@10.32.1",
   "type": "module",
   "license": "MIT",
   "description": "Reusable binary delta-update engine: apply TRDIFF10/bsdiff+zstd patch chains to a binary and discover chains from a pluggable source (OCI/GHCR or GitHub Releases). Pure Node, zero product coupling.",
@@ -48,7 +49,7 @@
     "clean": "rm -rf dist",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "prepublishOnly": "npm run clean && npm run build"
+    "prepublishOnly": "pnpm run clean && pnpm run build"
   },
   "devDependencies": {
     "@types/node": "24.13.1",

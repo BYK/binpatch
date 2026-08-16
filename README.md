@@ -11,7 +11,7 @@ Action. Pure Node, zero product coupling — works for Electron apps, CLIs,
 agents, and any single-file binary artifact.
 
 ```sh
-npm install binpatch
+pnpm add binpatch
 ```
 
 **Docs:** https://binpatch.p.byk.im/ · **Source:** https://github.com/BYK/binpatch

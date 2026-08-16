@@ -30,11 +30,12 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v5
         with:
           node-version: "22"
-          cache: npm
-          cache-dependency-path: website/package-lock.json
+          cache: pnpm
+          cache-dependency-path: website/pnpm-lock.yaml
 
       # Check if website files changed. On 'closed' events we always proceed
       # (cleanup). Otherwise we only build/deploy when website files changed.
@@ -53,14 +54,14 @@ jobs:
           (github.event.action == 'closed' || steps.filter.outputs.website == 'true') &&
           github.event.pull_request.head.repo.full_name == github.repository
         working-directory: website
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Build site
         if: >-
           (github.event.action == 'closed' || steps.filter.outputs.website == 'true') &&
           github.event.pull_request.head.repo.full_name == github.repository
         working-directory: website
-        run: npm run build
+        run: pnpm run build
         env:
           PR_NUMBER: ${{ github.event.number }}
           DOCS_BASE_PATH: /_preview/pr-${{ github.event.number }}/

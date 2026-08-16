@@ -34,9 +34,9 @@ binpatch/
 ```bash
 git clone https://github.com/BYK/binpatch
 cd binpatch
-npm install
-npm test
-npm run build
+pnpm install
+pnpm test
+pnpm run build
 ```
 
 Node 22.15+ is required (the first Node release with `node:zlib` zstd support).
@@ -53,13 +53,13 @@ We use [Vitest](https://vitest.dev/). The test suite covers:
 Run a single test file:
 
 ```bash
-npm test -- test/bspatch.test.ts
+pnpm test -- test/bspatch.test.ts
 ```
 
 Run with coverage:
 
 ```bash
-npm run test:coverage
+pnpm run test:coverage
 ```
 
 ## Mutation-verify your fix
@@ -80,9 +80,9 @@ PR:
 2. Make your change with tests.
 3. Run the full gate locally:
    ```bash
-   npm run typecheck
-   npm test
-   npm run build
+   pnpm run typecheck
+   pnpm test
+   pnpm run build
    ```
 4. Open the PR against `main`.
 5. Address review comments. We use the project's two-reviewer
