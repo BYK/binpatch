@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" role="img" aria-label="binpatch">
+  <rect width="32" height="32" rx="7" fill="#0b0d10"/>
+  <rect x="5" y="9" width="10" height="14" rx="2.4" fill="#2ec4b6"/>
+  <rect x="17" y="9" width="10" height="14" rx="2.4" fill="#d97706"/>
+  <path d="M15 11.5 L17 11.5 M15 14.5 L17 14.5 M15 17.5 L17 17.5 M15 20.5 L17 20.5"
+        stroke="#f7f5f0" stroke-width="1.2" stroke-linecap="round"/>
+  <circle cx="16" cy="11.5" r="1" fill="#f7f5f0"/>
+  <circle cx="16" cy="14.5" r="1" fill="#f7f5f0"/>
+  <circle cx="16" cy="17.5" r="1" fill="#f7f5f0"/>
+  <circle cx="16" cy="20.5" r="1" fill="#f7f5f0"/>
+</svg>
